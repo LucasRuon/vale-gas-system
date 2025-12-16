@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(node -c:*)",
+      "Bash(timeout 5 node:*)",
+      "Bash(echo:*)",
+      "Bash(node -e:*)",
+      "Bash(if [ ! -f .env ])",
+      "Bash(then echo \"Criando arquivo .env...\" cp .env.local .env echo \"✅ Arquivo .env criado!\" else echo \"✅ Arquivo .env já existe\" fi cat .env)",
+      "Bash(npm start)",
+      "Bash(pkill:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run pdf:*)",
+      "Bash(open MANUAL_DE_USO.pdf)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,47 @@
+# Dependências
+node_modules/
+package-lock.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Banco de dados e backups locais
+data/
+database.sqlite
+database_*.sqlite
+backups/
+*.db
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development
+.env.production
+.env.railway
+
+# Sistema operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testes
+coverage/
+.nyc_output/
+
+# Temporários
+*.tmp
+*.temp
+.cache/

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Vale-Gás | Consigaz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#053462;--accent:#DC3E31}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(135deg,#053462 0%,#0a4a8a 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .container{background:white;padding:48px;border-radius:20px;box-shadow:0 25px 80px rgba(0,0,0,0.3);width:100%;max-width:420px;text-align:center}
+        .logo{margin-bottom:32px}
+        .logo img{max-width:200px;height:auto}
+        h1{font-size:24px;font-weight:600;color:#1f2937;margin-bottom:8px}
+        .subtitle{color:#6b7280;margin-bottom:40px;font-size:15px}
+        .btn-group{display:flex;flex-direction:column;gap:12px}
+        .btn{display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 24px;border-radius:10px;text-decoration:none;font-weight:500;font-size:15px;transition:all 0.2s;border:none;cursor:pointer}
+        .btn-colaborador{background:#10b981;color:white}
+        .btn-colaborador:hover{background:#059669;transform:translateY(-2px)}
+        .btn-distribuidor{background:var(--primary);color:white}
+        .btn-distribuidor:hover{background:#0a4a8a;transform:translateY(-2px)}
+        .btn-admin{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb}
+        .btn-admin:hover{background:#e5e7eb;transform:translateY(-2px)}
+        .footer{margin-top:40px;padding-top:24px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://propangas.com.br/wp-content/uploads/2024/09/logo-consigaz.png" alt="Consigaz">
+        </div>
+        <h1>Sistema Vale-Gás</h1>
+        <p class="subtitle">Selecione seu tipo de acesso</p>
+        <div class="btn-group">
+            <a href="login-colaborador.html" class="btn btn-colaborador"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Sou Colaborador</a>
+            <a href="login-distribuidor.html" class="btn btn-distribuidor"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Sou Distribuidor</a>
+            <a href="login-admin.html" class="btn btn-admin"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Acesso RH</a>
+        </div>
+        <div class="footer">© 2025 Consigaz - Sistema de Controle de Vale-Gás</div>
+    </div>
+</body>
+</html>

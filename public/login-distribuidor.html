@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Distribuidor | Consigaz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary:#053462}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f9fafb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+        .container{background:white;padding:40px;border-radius:20px;box-shadow:0 4px 24px rgba(0,0,0,0.08);width:100%;max-width:400px}
+        .back-link{display:inline-flex;align-items:center;gap:6px;color:#6b7280;text-decoration:none;font-size:14px;margin-bottom:24px}
+        .back-link:hover{color:#374151}
+        .header{text-align:center;margin-bottom:32px}
+        .logo{margin-bottom:24px}
+        .logo img{max-width:160px;height:auto}
+        h1{font-size:22px;font-weight:600;color:#1f2937;margin-bottom:8px}
+        .subtitle{color:#6b7280;font-size:14px}
+        .form-group{margin-bottom:20px}
+        label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}
+        input{width:100%;padding:12px 16px;border:1px solid #d1d5db;border-radius:10px;font-size:15px;transition:all 0.2s}
+        input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(5,52,98,0.15)}
+        .btn{width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer}
+        .btn:hover{background:#0a4a8a}
+        .btn:disabled{background:#d1d5db;cursor:not-allowed}
+        .error{background:#fef2f2;color:#dc2626;padding:12px 16px;border-radius:10px;margin-bottom:20px;font-size:14px;display:none}
+        .forgot-link{display:block;text-align:center;margin-top:20px;color:#6b7280;text-decoration:none;font-size:14px}
+        .forgot-link:hover{color:var(--primary)}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Voltar</a>
+        <div class="header">
+            <div class="logo"><img src="https://propangas.com.br/wp-content/uploads/2024/09/logo-consigaz.png" alt="Consigaz"></div>
+            <h1>Área do Distribuidor</h1>
+            <p class="subtitle">Digite seu CNPJ ou email para acessar</p>
+        </div>
+        <div id="error" class="error"></div>
+        <form id="loginForm">
+            <div class="form-group"><label>CNPJ ou Email</label><input type="text" id="login" placeholder="00.000.000/0000-00 ou email" required></div>
+            <div class="form-group"><label>Senha</label><input type="password" id="senha" placeholder="Digite sua senha" required></div>
+            <button type="submit" class="btn" id="btnLogin">Entrar</button>
+        </form>
+        <a href="recuperar-senha.html?tipo=distribuidor" class="forgot-link">Esqueci minha senha</a>
+    </div>
+    <script>
+        document.getElementById('login').addEventListener('input',function(e){
+            let v=e.target.value;
+            // Se contém @ ou letra, é email - não formata
+            if(v.includes('@') || /[a-zA-Z]/.test(v)) return;
+            // Se só tem números, aplica máscara de CNPJ
+            v=v.replace(/\D/g,'');
+            if(v.length<=14){
+                v=v.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+                e.target.value=v;
+            }
+        });
+        document.getElementById('loginForm').addEventListener('submit',async function(e){e.preventDefault();const btn=document.getElementById('btnLogin'),err=document.getElementById('error');btn.disabled=true;btn.textContent='Entrando...';err.style.display='none';try{const r=await fetch('/api/auth/login/distribuidor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:document.getElementById('login').value,senha:document.getElementById('senha').value})});const d=await r.json();if(d.sucesso){localStorage.setItem('token',d.token);localStorage.setItem('usuario',JSON.stringify(d.usuario));location.href='distribuidor.html'}else{err.textContent=d.erro||'Erro';err.style.display='block'}}catch(error){err.textContent='Erro de conexão';err.style.display='block'}btn.disabled=false;btn.textContent='Entrar'});
+        const t=localStorage.getItem('token'),u=JSON.parse(localStorage.getItem('usuario')||'{}');if(t&&u.tipo==='distribuidor')location.href='distribuidor.html';
+    </script>
+</body>
+</html>

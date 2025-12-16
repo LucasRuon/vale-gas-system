@@ -1,0 +1,33 @@
+# Railway ignore - arquivos que não devem ir para produção
+
+# Logs locais
+logs/
+*.log
+
+# Backups locais
+backups/
+
+# Banco de dados local
+database.sqlite
+database_*.sqlite
+
+# Node modules (serão instalados no build)
+node_modules/
+
+# Arquivos de desenvolvimento
+.env
+.env.local
+.env.development
+
+# Documentação de desenvolvimento
+ANALISE_BUGS.md
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

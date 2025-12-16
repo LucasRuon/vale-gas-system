@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Distribuidor | Consigaz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #053462;
+            --primary-light: #0a4a8a;
+            --accent: #DC3E31;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #1f2937;
+            --bg-body: #f9fafb;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --gray-50: #1e293b;
+            --gray-100: #334155;
+            --gray-200: #475569;
+            --gray-500: #94a3b8;
+            --gray-700: #cbd5e1;
+            --gray-900: #f1f5f9;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-body); min-height: 100vh; color: var(--text-primary); transition: background 0.3s, color 0.3s; }
+        
+        .navbar {
+            background: var(--primary);
+            color: white;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .navbar-brand img { height: 32px; }
+        .navbar-brand span {
+            border-left: 1px solid rgba(255,255,255,0.3);
+            padding-left: 12px;
+            margin-left: 4px;
+        }
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,0.25); }
+        .theme-toggle{background:rgba(255,255,255,0.15);border:none;padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .theme-toggle:hover{background:rgba(255,255,255,0.25)}
+        .theme-toggle svg{width:20px;height:20px;stroke:white;fill:none}
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 12px;
+        }
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .tab:hover { background: var(--gray-100); color: var(--gray-700); }
+        .tab.active { background: var(--primary); color: white; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .validar-section { text-align: center; padding: 20px 0; }
+        .validar-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 16px 20px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-family: 'Inter', monospace;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .validar-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(5,52,98,0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .resultado {
+            margin-top: 24px;
+            padding: 24px;
+            border-radius: 12px;
+            display: none;
+        }
+        .resultado.valido {
+            background: rgba(16,185,129,0.1);
+            border: 2px solid var(--success);
+        }
+        .resultado.invalido {
+            background: rgba(239,68,68,0.1);
+            border: 2px solid var(--danger);
+        }
+        .resultado h3 {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        .resultado-info p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+        }
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border: none;
+        }
+        .stat-card h3 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-card p {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        th {
+            background: var(--gray-50);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        td { font-size: 14px; }
+        tr:hover { background: var(--gray-50); }
+        code {
+            background: var(--gray-100);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(5,52,98,0.1);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .profile-item label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .profile-item span {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="https://consigaz.zendesk.com/embeddable/avatars/7617583100308" alt="Consigaz">
+            <span>Painel Distribuidor</span>
+        </div>
+        <div class="navbar-user">
+            <span id="userName"></span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                <svg id="iconSol" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg id="iconLua" viewBox="0 0 24 24" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="btn-logout" onclick="logout()">Sair</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('validar')">Validar Vale</button>
+            <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="showTab('historico')">Histórico</button>
+            <button class="tab" onclick="showTab('perfil')">Perfil</button>
+        </div>
+
+        <div id="tab-validar" class="section active">
+            <div class="card">
+                <h3 class="card-title" style="text-align:center;border:none;padding:0;margin-bottom:8px">Validar Código do Vale-Gás</h3>
+                <div class="validar-section">
+                    <p style="margin-bottom:24px;color:var(--text-secondary)">Digite o código apresentado pelo colaborador</p>
+                    <input type="text" id="codigoInput" class="validar-input" placeholder="VG-XXXXXX" maxlength="9">
+                    <br><br>
+                    <button class="btn btn-primary" onclick="consultarCodigo()">Consultar Código</button>
+                    <div id="resultado" class="resultado">
+                        <div id="resultadoContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-dashboard" class="section">
+            <div class="stats-grid">
+                <div class="stat-card highlight">
+                    <h3 id="retiradasHoje">0</h3>
+                    <p>Retiradas Hoje</p>
+                </div>
+                <div class="stat-card highlight">
+                    <h3 id="retiradasMes">0</h3>
+                    <p>Retiradas no Mês</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Últimas Retiradas</h3>
+                <div id="ultimasRetiradas"></div>
+            </div>
+        </div>
+
+        <div id="tab-historico" class="section">
+            <div class="card">
+                <h3 class="card-title">Histórico de Retiradas</h3>
+                <div style="margin-bottom:20px">
+                    <label class="form-label">Filtrar por mês:</label>
+                    <input type="month" id="mesHistorico" class="form-control" style="width:auto;display:inline-block" onchange="loadHistorico()">
+                </div>
+                <div id="historicoContent"></div>
+            </div>
+        </div>
+
+        <div id="tab-perfil" class="section">
+            <div class="card">
+                <h3 class="card-title">Dados da Empresa</h3>
+                <div id="perfilContent"></div>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Alterar Senha</h3>
+                <form id="formSenha" style="max-width:400px">
+                    <div class="form-group">
+                        <label class="form-label">Senha Atual</label>
+                        <input type="password" id="senhaAtual" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nova Senha</label>
+                        <input type="password" id="novaSenha" class="form-control" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirmar Nova Senha</label>
+                        <input type="password" id="confirmarSenha" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        let token = localStorage.getItem('token');
+        let usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        
+        if (!token || usuario.tipo !== 'distribuidor') {
+            location.href = 'login-distribuidor.html';
+        }
+        
+        document.getElementById('userName').textContent = usuario.nome;
+
+        // Tema
+        function initTheme(){
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+        }
+        function toggleTheme(){
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        function updateThemeIcon(theme){
+            document.getElementById('iconSol').style.display = theme === 'dark' ? 'block' : 'none';
+            document.getElementById('iconLua').style.display = theme === 'dark' ? 'none' : 'block';
+        }
+        initTheme();
+
+        const hoje = new Date();
+        document.getElementById('mesHistorico').value = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+
+        async function api(endpoint, options = {}) {
+            try {
+                const response = await fetch(API + endpoint, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                if (response.status === 401) { logout(); return null; }
+                return response.json();
+            } catch (e) {
+                console.error('Erro API:', e);
+                return null;
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            location.href = 'login-distribuidor.html';
+        }
+
+        function showTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${name}')"]`).classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            
+            if (name === 'dashboard') loadDashboard();
+            if (name === 'historico') loadHistorico();
+            if (name === 'perfil') loadPerfil();
+        }
+
+        document.getElementById('codigoInput').addEventListener('input', function(e) {
+            let v = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            if (v.length === 2 && !v.includes('-')) v += '-';
+            e.target.value = v;
+        });
+
+        document.getElementById('codigoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') consultarCodigo();
+        });
+
+        async function consultarCodigo() {
+            const codigo = document.getElementById('codigoInput').value.trim();
+            if (!codigo) { alert('Digite um código'); return; }
+
+            const resultado = document.getElementById('resultado');
+            const content = document.getElementById('resultadoContent');
+            resultado.style.display = 'none';
+            resultado.className = 'resultado';
+
+            const d = await api(`/distribuidor/validar/${codigo}`);
+            if (!d) return;
+
+            resultado.style.display = 'block';
+
+            if (d.valido) {
+                resultado.classList.add('valido');
+                content.innerHTML = `
+                    <h3 style="color:var(--success)">✅ VALE-GÁS VÁLIDO</h3>
+                    <div class="resultado-info">
+                        <p><strong>Colaborador:</strong> ${d.dados.colaborador_nome}</p>
+                        <p><strong>CPF:</strong> ${d.dados.colaborador_cpf}</p>
+                        <p><strong>Código:</strong> ${d.dados.codigo}</p>
+                    </div>
+                    <button class="btn btn-success" style="margin-top:20px;width:100%" onclick="confirmarRetirada('${codigo}')">✓ CONFIRMAR RETIRADA</button>
+                `;
+            } else {
+                resultado.classList.add('invalido');
+                content.innerHTML = `<h3 style="color:var(--danger)">❌ ${d.mensagem.toUpperCase()}</h3>`;
+            }
+        }
+
+        async function confirmarRetirada(codigo) {
+            if (!confirm('Confirmar a retirada deste vale-gás?')) return;
+            const d = await api('/distribuidor/confirmar-retirada', { method: 'POST', body: JSON.stringify({ codigo }) });
+            if (d && d.sucesso) {
+                alert('✅ Retirada confirmada com sucesso!');
+                document.getElementById('codigoInput').value = '';
+                document.getElementById('resultado').style.display = 'none';
+            } else {
+                alert(d?.erro || 'Erro ao confirmar retirada');
+            }
+        }
+
+        async function loadDashboard() {
+            const d = await api('/distribuidor/dashboard');
+            if (!d || !d.dados) return;
+            document.getElementById('retiradasHoje').textContent = d.dados.retiradas_hoje;
+            document.getElementById('retiradasMes').textContent = d.dados.retiradas_mes;
+            const ultimas = d.dados.ultimas_retiradas;
+            document.getElementById('ultimasRetiradas').innerHTML = (ultimas && ultimas.length > 0) 
+                ? `<table><thead><tr><th>Colaborador</th><th>CPF</th><th>Código</th><th>Data/Hora</th></tr></thead><tbody>${ultimas.map(r => `<tr><td>${r.colaborador_nome}</td><td>${r.colaborador_cpf}</td><td><code>${r.codigo}</code></td><td>${new Date(r.data_retirada).toLocaleString('pt-BR')}</td></tr>`).join('')}</tbody></table>`
+                : '<div class="empty-state">Nenhuma retirada registrada</div>';
+        }
+
+        async function loadHistorico() {
+            const mes = document.getElementById('mesHistorico').value;
+            const d = await api(`/distribuidor/retiradas?mes=${mes}`);
+            document.getElementById('historicoContent').innerHTML = (!d || !d.dados || d.dados.length === 0)
+                ? '<div class="empty-state">Nenhuma retirada neste período</div>'
+                : `<p style="margin-bottom:16px;font-weight:500">Total: ${d.paginacao.total} retiradas</p><table><thead><tr><th>Colaborador</th><th>CPF</th><th>Código</th><th>Data/Hora</th></tr></thead><tbody>${d.dados.map(r => `<tr><td>${r.colaborador_nome}</td><td>${r.colaborador_cpf}</td><td><code>${r.codigo}</code></td><td>${r.data_formatada} ${r.hora_formatada}</td></tr>`).join('')}</tbody></table>`;
+        }
+
+        async function loadPerfil() {
+            const d = await api('/distribuidor/perfil');
+            if (!d || !d.dados) return;
+            const p = d.dados;
+            document.getElementById('perfilContent').innerHTML = `
+                <div class="profile-grid">
+                    <div class="profile-item"><label>Nome</label><span>${p.nome}</span></div>
+                    <div class="profile-item"><label>CNPJ</label><span>${p.cnpj}</span></div>
+                    <div class="profile-item"><label>Email</label><span>${p.email}</span></div>
+                    <div class="profile-item"><label>Telefone</label><span>${p.telefone}</span></div>
+                    <div class="profile-item"><label>Responsável</label><span>${p.responsavel}</span></div>
+                    <div class="profile-item"><label>Horário</label><span>${p.horario_funcionamento || '-'}</span></div>
+                </div>
+                <hr style="margin:24px 0;border:none;border-top:1px solid var(--gray-200)">
+                <p style="color:var(--gray-700)"><strong>Endereço:</strong> ${p.logradouro}, ${p.numero} - ${p.bairro}, ${p.cidade}/${p.estado} - CEP ${p.cep}</p>
+            `;
+        }
+
+        document.getElementById('formSenha').onsubmit = async function(e) {
+            e.preventDefault();
+            if (document.getElementById('novaSenha').value !== document.getElementById('confirmarSenha').value) {
+                alert('As senhas não coincidem!');
+                return;
+            }
+            const d = await api('/distribuidor/alterar-senha', {
+                method: 'POST',
+                body: JSON.stringify({
+                    senha_atual: document.getElementById('senhaAtual').value,
+                    nova_senha: document.getElementById('novaSenha').value
+                })
+            });
+            if (d && d.sucesso) { alert('Senha alterada com sucesso!'); this.reset(); }
+            else alert(d?.erro || 'Erro ao alterar senha');
+        };
+
+        loadDashboard();
+    </script>
+</body>
+</html>

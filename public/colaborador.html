@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Vale-Gás | Consigaz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #053462;
+            --primary-light: #0a4a8a;
+            --accent: #DC3E31;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --bg-body: #f9fafb;
+            --bg-card: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+        [data-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --gray-50: #1e293b;
+            --gray-100: #334155;
+            --gray-200: #475569;
+            --gray-300: #475569;
+            --gray-400: #94a3b8;
+            --gray-500: #94a3b8;
+            --gray-600: #cbd5e1;
+            --gray-700: #cbd5e1;
+            --gray-800: #e2e8f0;
+            --gray-900: #f1f5f9;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-body);color:var(--text-primary);line-height:1.5;min-height:100vh;transition:background 0.3s,color 0.3s}
+        
+        .navbar{background:var(--primary);color:white;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+        .navbar-brand{display:flex;align-items:center;gap:12px;font-weight:600;font-size:18px}
+        .navbar-user{display:flex;align-items:center;gap:16px}
+        .navbar-user span{font-size:14px;opacity:0.9}
+        .btn-logout{background:rgba(255,255,255,0.15);color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500}
+        .btn-logout:hover{background:rgba(255,255,255,0.25)}
+        .theme-toggle{background:rgba(255,255,255,0.15);border:none;padding:8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .theme-toggle:hover{background:rgba(255,255,255,0.25)}
+        .theme-toggle svg{width:20px;height:20px;stroke:white;fill:none}
+
+        .container{max-width:900px;margin:0 auto;padding:24px}
+        
+        .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid var(--border-color);padding-bottom:0}
+        .tab{padding:12px 20px;background:none;border:none;font-size:14px;font-weight:500;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.2s}
+        .tab:hover{color:var(--primary)}
+        .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+        .card{background:var(--bg-card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:24px;margin-bottom:24px;border:1px solid var(--border-color);transition:background 0.3s}
+        .card-title{font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border-color)}
+
+        .vale-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);border-radius:16px;padding:32px;color:white;text-align:center;margin-bottom:24px}
+        .vale-card h2{font-size:14px;font-weight:500;opacity:0.9;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+        .vale-code{font-size:42px;font-weight:700;letter-spacing:4px;font-family:monospace;margin-bottom:16px}
+        .vale-qr{background:white;border-radius:12px;padding:16px;display:inline-block;margin:16px 0}
+        .vale-qr canvas{display:block}
+        .vale-info{display:flex;justify-content:center;gap:32px;margin-top:16px;flex-wrap:wrap}
+        .vale-info-item{text-align:center}
+        .vale-info-item label{display:block;font-size:11px;opacity:0.8;margin-bottom:4px;text-transform:uppercase}
+        .vale-info-item span{font-weight:600;font-size:14px}
+
+        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500}
+        .status-ativo{background:rgba(16,185,129,0.15);color:#059669}
+        .status-utilizado{background:rgba(59,130,246,0.15);color:#2563eb}
+        .status-expirado{background:rgba(239,68,68,0.15);color:#dc2626}
+
+        /* Slider de múltiplos vales */
+        .vales-slider{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:16px;scrollbar-width:thin}
+        .vales-slider::-webkit-scrollbar{height:6px}
+        .vales-slider::-webkit-scrollbar-track{background:var(--gray-100);border-radius:3px}
+        .vales-slider::-webkit-scrollbar-thumb{background:var(--primary);border-radius:3px}
+        .vales-slider .vale-card{min-width:280px;scroll-snap-align:start;margin:0}
+        .vales-counter{text-align:center;margin-bottom:16px;font-size:14px;color:var(--text-secondary)}
+        .vales-counter strong{color:var(--primary)}
+        .swipe-hint{text-align:center;font-size:12px;color:var(--text-secondary);margin-top:8px;opacity:0.8}
+
+        .no-vale{text-align:center;padding:48px 24px;color:var(--text-secondary)}
+        .no-vale svg{width:64px;height:64px;margin-bottom:16px;opacity:0.5}
+        .no-vale h3{font-size:18px;color:var(--text-primary);margin-bottom:8px}
+
+        .profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+        .profile-item{padding:12px 0}
+        .profile-item label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+        .profile-item span{font-weight:500;color:var(--text-primary)}
+
+        .distribuidor-list{list-style:none}
+        .distribuidor-item{padding:16px;border:1px solid var(--border-color);border-radius:10px;margin-bottom:12px;transition:all 0.2s;background:var(--bg-card)}
+        .distribuidor-item:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(5,52,98,0.1)}
+        .distribuidor-item h4{color:var(--text-primary);margin-bottom:8px;font-size:15px}
+        .distribuidor-item p{color:var(--text-secondary);font-size:13px;margin:4px 0;display:flex;align-items:center;gap:8px}
+
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:6px}
+        .form-control{width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-card);color:var(--text-primary)}
+        .form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(5,52,98,0.1)}
+
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s}
+        .btn-primary{background:var(--primary);color:white}
+        .btn-primary:hover{background:var(--primary-light)}
+
+        .historico-item{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--gray-100)}
+        .historico-item:last-child{border-bottom:none}
+
+        .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+        .badge-success{background:rgba(16,185,129,0.1);color:#059669}
+        .badge-warning{background:rgba(245,158,11,0.1);color:#d97706}
+        .badge-danger{background:rgba(239,68,68,0.1);color:#dc2626}
+        .badge-info{background:rgba(5,52,98,0.1);color:var(--primary)}
+
+        .section{display:none}
+        .section.active{display:block}
+
+        .alert{padding:16px;border-radius:8px;margin-bottom:16px;font-size:14px}
+        .alert-success{background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.2)}
+        .alert-error{background:rgba(239,68,68,0.1);color:#dc2626;border:1px solid rgba(239,68,68,0.2)}
+
+        /* Avaliações */
+        .avaliacao-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:16px;margin-bottom:12px}
+        .avaliacao-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+        .avaliacao-info h4{font-size:15px;font-weight:600;margin-bottom:4px}
+        .avaliacao-info p{font-size:13px;color:var(--text-secondary)}
+        .estrelas{display:flex;gap:4px}
+        .estrela{cursor:pointer;font-size:24px;color:var(--border-color);transition:color 0.2s}
+        .estrela:hover,.estrela.active{color:#fbbf24}
+        .estrelas-display{color:#fbbf24;font-size:16px}
+        .avaliacao-form textarea{width:100%;padding:12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;resize:vertical;min-height:80px;background:var(--bg-input);color:var(--text-primary)}
+        .avaliacao-form button{margin-top:12px}
+        .avaliacao-feita{background:var(--gray-50);border-radius:8px;padding:12px}
+        .avaliacao-feita .nota{font-weight:600;color:var(--text-primary)}
+
+        @media(max-width:600px){
+            .tabs{overflow-x:auto;white-space:nowrap}
+            .vale-code{font-size:28px}
+            .vale-info{gap:16px}
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="https://consigaz.zendesk.com/embeddable/avatars/7617583100308" alt="Consigaz" style="height:32px">
+            <span style="margin-left:12px;border-left:1px solid rgba(255,255,255,0.3);padding-left:12px">Vale-Gás</span>
+        </div>
+        <div class="navbar-user">
+            <span id="userName"></span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">
+                <svg id="iconSol" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <svg id="iconLua" viewBox="0 0 24 24" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+            <button class="btn-logout" onclick="logout()">Sair</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('vale')">Meu Vale-Gás</button>
+            <button class="tab" onclick="showTab('distribuidores')">Onde Retirar</button>
+            <button class="tab" onclick="showTab('avaliacoes')">⭐ Avaliar</button>
+            <button class="tab" onclick="showTab('perfil')">Meu Perfil</button>
+            <button class="tab" onclick="showTab('solicitacoes')">Solicitações</button>
+        </div>
+
+        <div id="tab-vale" class="section active">
+            <div id="valeContent"><p style="text-align:center;padding:40px;color:var(--text-secondary)">Carregando...</p></div>
+            
+            <div class="card">
+                <h3 class="card-title">Histórico de Vales</h3>
+                <div id="historicoContent"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+        </div>
+
+        <div id="tab-distribuidores" class="section">
+            <div class="card">
+                <h3 class="card-title">Distribuidores Próximos de Você</h3>
+                <div id="distribuidoresContent"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+        </div>
+
+        <div id="tab-avaliacoes" class="section">
+            <div class="card">
+                <h3 class="card-title">⭐ Avaliar Atendimento</h3>
+                <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Avalie o atendimento dos distribuidores onde você retirou seu gás. Sua opinião ajuda a melhorar o serviço!</p>
+                <div id="avaliacoesPendentes"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+            
+            <div class="card" style="margin-top:20px">
+                <h3 class="card-title">Minhas Avaliações</h3>
+                <div id="minhasAvaliacoes"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+        </div>
+
+        <div id="tab-perfil" class="section">
+            <div class="card">
+                <h3 class="card-title">Meus Dados</h3>
+                <div id="perfilContent"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+            
+            <div class="card">
+                <h3 class="card-title">Alterar Senha</h3>
+                <form id="formSenha">
+                    <div class="form-group"><label class="form-label">Senha Atual</label><input type="password" id="senhaAtual" class="form-control" required></div>
+                    <div class="form-group"><label class="form-label">Nova Senha</label><input type="password" id="novaSenha" class="form-control" required minlength="6"></div>
+                    <div class="form-group"><label class="form-label">Confirmar Nova Senha</label><input type="password" id="confirmarSenha" class="form-control" required></div>
+                    <button type="submit" class="btn btn-primary">Alterar Senha</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="tab-solicitacoes" class="section">
+            <div class="card">
+                <h3 class="card-title">Solicitar Alteração de Dados</h3>
+                <p style="margin-bottom:16px;color:var(--text-secondary);font-size:14px">Caso algum dado esteja incorreto ou você mudou de endereço, solicite a alteração aqui.</p>
+                <form id="formSolicitacao">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de Alteração</label>
+                        <select id="tipoSolicitacao" class="form-control" required>
+                            <option value="">Selecione...</option>
+                            <option value="endereco">Endereço</option>
+                            <option value="telefone">Telefone</option>
+                            <option value="email">Email</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descrição da Alteração</label>
+                        <textarea id="descricaoSolicitacao" class="form-control" rows="4" placeholder="Descreva detalhadamente o que precisa ser alterado..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enviar Solicitação</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Minhas Solicitações</h3>
+                <div id="solicitacoesContent"><p style="text-align:center;padding:20px;color:var(--text-secondary)">Carregando...</p></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+const API='/api';
+let token=localStorage.getItem('token'),usuario=JSON.parse(localStorage.getItem('usuario')||'{}');
+if(!token||usuario.tipo!=='colaborador')location.href='login-colaborador.html';
+document.getElementById('userName').textContent=usuario.nome;
+
+// Tema
+function initTheme(){
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+}
+function toggleTheme(){
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon(newTheme);
+}
+function updateThemeIcon(theme){
+    document.getElementById('iconSol').style.display = theme === 'dark' ? 'block' : 'none';
+    document.getElementById('iconLua').style.display = theme === 'dark' ? 'none' : 'block';
+}
+initTheme();
+
+async function api(ep,opt={}){
+    try{
+        const r=await fetch(API+ep,{...opt,headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,...opt.headers}});
+        if(r.status===401){logout();return null}
+        return r.json();
+    }catch(e){return null}
+}
+function logout(){localStorage.clear();location.href='login-colaborador.html'}
+
+function showTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelector(`[onclick="showTab('${name}')"]`).classList.add('active');
+    document.getElementById('tab-'+name).classList.add('active');
+    
+    if(name === 'avaliacoes') loadAvaliacoes();
+}
+
+// Vale-Gás com QR Code - Suporte a múltiplos vales
+async function loadVale(){
+    const d=await api('/colaborador/vale-gas');
+    const container=document.getElementById('valeContent');
+    
+    if(!d||!d.dados){
+        container.innerHTML=`
+            <div class="no-vale">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <h3>Nenhum vale disponível</h3>
+                <p>Seu vale-gás ainda não foi gerado para este mês.</p>
+            </div>`;
+        return;
+    }
+
+    const statusClass={'ativo':'status-ativo','utilizado':'status-utilizado','expirado':'status-expirado'};
+    const statusText={'ativo':'Disponível para retirada','utilizado':'Já retirado','expirado':'Expirado'};
+
+    // Se tem múltiplos vales
+    if(d.multiplos && d.multiplos.length > 1){
+        const valesAtivos = d.multiplos.filter(v => v.status === 'ativo').length;
+        const valesUtilizados = d.multiplos.filter(v => v.status === 'utilizado').length;
+        
+        container.innerHTML = `
+            <div class="vales-counter">
+                Você tem <strong>${d.total_vales} vale(s)</strong> este mês 
+                (${valesAtivos} disponível${valesAtivos !== 1 ? 's' : ''}, ${valesUtilizados} retirado${valesUtilizados !== 1 ? 's' : ''})
+            </div>
+            <div class="vales-slider">
+                ${d.multiplos.map(v => {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(v.codigo)}&bgcolor=ffffff&color=053462`;
+                    return `
+                    <div class="vale-card ${v.status !== 'ativo' ? 'vale-utilizado' : ''}" style="${v.status !== 'ativo' ? 'opacity:0.7' : ''}">
+                        <h2 style="font-size:14px">${v.status === 'ativo' ? '✅ Disponível' : '📦 Retirado'}</h2>
+                        <div class="vale-code" style="font-size:20px">${v.codigo}</div>
+                        ${v.status === 'ativo' ? `
+                            <div class="vale-qr"><img src="${qrUrl}" alt="QR Code ${v.codigo}" width="150" height="150" style="display:block;border-radius:8px"></div>
+                        ` : ''}
+                        <div class="vale-info" style="gap:16px">
+                            <div class="vale-info-item">
+                                <label>Status</label>
+                                <span class="status-badge ${statusClass[v.status]}" style="font-size:11px;padding:4px 10px">${statusText[v.status]}</span>
+                            </div>
+                            <div class="vale-info-item">
+                                <label>Validade</label>
+                                <span style="font-size:12px">${v.dias_restantes>0?v.dias_restantes+' dias':'Expirado'}</span>
+                            </div>
+                        </div>
+                        ${v.status==='utilizado' && v.distribuidor_nome?`
+                            <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.2);font-size:11px;opacity:0.9">
+                                Retirado em ${new Date(v.data_retirada).toLocaleDateString('pt-BR')}<br>${v.distribuidor_nome}
+                            </div>`:''}
+                    </div>`;
+                }).join('')}
+            </div>
+            <p class="swipe-hint">👆 Arraste para ver todos os vales</p>
+        `;
+    } else {
+        // Vale único (comportamento original)
+        const v=d.dados;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(v.codigo)}&bgcolor=ffffff&color=053462`;
+
+        container.innerHTML=`
+            <div class="vale-card">
+                <h2>Seu código do mês</h2>
+                <div class="vale-code">${v.codigo}</div>
+                <div class="vale-qr"><img id="qrcode" src="${qrUrl}" alt="QR Code ${v.codigo}" width="180" height="180" style="display:block;border-radius:8px"></div>
+                <p style="font-size:12px;opacity:0.8">Apresente este QR Code no distribuidor</p>
+                <div class="vale-info">
+                    <div class="vale-info-item">
+                        <label>Status</label>
+                        <span class="status-badge ${statusClass[v.status]}">${statusText[v.status]}</span>
+                    </div>
+                    <div class="vale-info-item">
+                        <label>Mês Referência</label>
+                        <span>${v.mes_referencia_formatado}</span>
+                    </div>
+                    <div class="vale-info-item">
+                        <label>Validade</label>
+                        <span>${v.dias_restantes>0?v.dias_restantes+' dias':'Expirado'}</span>
+                    </div>
+                </div>
+                ${v.status==='utilizado'?`
+                    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.2)">
+                        <p style="font-size:13px;opacity:0.9">Retirado em ${new Date(v.data_retirada).toLocaleDateString('pt-BR')} no ${v.distribuidor_nome||'distribuidor'}</p>
+                    </div>`:''}
+            </div>`;
+    }
+}
+
+async function loadHistorico(){
+    const d=await api('/colaborador/vale-gas/historico');
+    const container=document.getElementById('historicoContent');
+    
+    if(!d||!d.dados||d.dados.length===0){
+        container.innerHTML='<p style="text-align:center;color:var(--text-secondary)">Nenhum histórico encontrado.</p>';
+        return;
+    }
+
+    const statusBadge={'ativo':'badge-success','utilizado':'badge-info','expirado':'badge-danger'};
+    container.innerHTML=d.dados.map(v=>`
+        <div class="historico-item">
+            <div>
+                <strong style="color:var(--text-primary)">${v.mes_referencia_formatado}</strong>
+                <br><small style="color:var(--text-secondary)">Código: ${v.codigo}</small>
+            </div>
+            <div style="text-align:right">
+                <span class="badge ${statusBadge[v.status]}">${v.status}</span>
+                ${v.distribuidor_nome?`<br><small style="color:var(--text-secondary)">${v.distribuidor_nome}</small>`:''}
+            </div>
+        </div>`).join('');
+}
+
+async function loadDistribuidores(){
+    const d=await api('/colaborador/distribuidores-proximos');
+    const container=document.getElementById('distribuidoresContent');
+    
+    if(!d||!d.dados||d.dados.length===0){
+        container.innerHTML='<p style="text-align:center;color:var(--text-secondary)">Nenhum distribuidor encontrado.</p>';
+        return;
+    }
+
+    container.innerHTML=`
+        <p style="margin-bottom:16px;color:var(--text-secondary);font-size:14px">Baseado no seu endereço em <strong>${d.endereco_colaborador.cidade}/${d.endereco_colaborador.estado}</strong></p>
+        <ul class="distribuidor-list">
+            ${d.dados.map(x=>`
+                <li class="distribuidor-item">
+                    <h4>🏪 ${x.nome}</h4>
+                    <p><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${x.endereco_completo}</p>
+                    <p><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>${x.telefone}</p>
+                    ${x.horario_funcionamento?`<p><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${x.horario_funcionamento}</p>`:''}
+                </li>`).join('')}
+        </ul>`;
+}
+
+async function loadPerfil(){
+    const d=await api('/colaborador/perfil');
+    const container=document.getElementById('perfilContent');
+    
+    if(!d||!d.dados){
+        container.innerHTML='<p style="text-align:center;color:var(--text-secondary)">Erro ao carregar perfil.</p>';
+        return;
+    }
+
+    const p=d.dados;
+    container.innerHTML=`
+        <div class="profile-grid">
+            <div class="profile-item"><label>Nome</label><span>${p.nome}</span></div>
+            <div class="profile-item"><label>CPF</label><span>${p.cpf_formatado}</span></div>
+            <div class="profile-item"><label>Email</label><span>${p.email}</span></div>
+            <div class="profile-item"><label>Telefone</label><span>${p.telefone}</span></div>
+            <div class="profile-item"><label>Matrícula</label><span>${p.matricula||'-'}</span></div>
+            <div class="profile-item"><label>Setor</label><span>${p.setor||'-'}</span></div>
+            <div class="profile-item"><label>Data Admissão</label><span>${new Date(p.data_admissao).toLocaleDateString('pt-BR')}</span></div>
+        </div>
+        <hr style="margin:20px 0;border:none;border-top:1px solid var(--gray-100)">
+        <h4 style="font-size:14px;color:var(--text-secondary);margin-bottom:16px">Endereço</h4>
+        <div class="profile-grid">
+            <div class="profile-item"><label>CEP</label><span>${p.cep}</span></div>
+            <div class="profile-item"><label>Logradouro</label><span>${p.logradouro}, ${p.numero}</span></div>
+            <div class="profile-item"><label>Bairro</label><span>${p.bairro}</span></div>
+            <div class="profile-item"><label>Cidade/UF</label><span>${p.cidade}/${p.estado}</span></div>
+        </div>`;
+}
+
+async function loadSolicitacoes(){
+    const d=await api('/colaborador/solicitacoes');
+    const container=document.getElementById('solicitacoesContent');
+    
+    if(!d||!d.dados||d.dados.length===0){
+        container.innerHTML='<p style="text-align:center;color:var(--text-secondary)">Nenhuma solicitação enviada.</p>';
+        return;
+    }
+
+    const statusBadge={'pendente':'badge-warning','aprovado':'badge-success','rejeitado':'badge-danger'};
+    const statusText={'pendente':'Pendente','aprovado':'Aprovado','rejeitado':'Rejeitado'};
+    
+    container.innerHTML=d.dados.map(s=>`
+        <div class="historico-item">
+            <div>
+                <strong style="color:var(--text-primary)">${s.tipo.charAt(0).toUpperCase()+s.tipo.slice(1)}</strong>
+                <br><small style="color:var(--text-secondary)">${s.descricao}</small>
+                ${s.resposta_admin?`<br><small style="color:var(--primary)">Resposta: ${s.resposta_admin}</small>`:''}
+            </div>
+            <div style="text-align:right">
+                <span class="badge ${statusBadge[s.status]}">${statusText[s.status]}</span>
+                <br><small style="color:var(--text-secondary)">${new Date(s.criado_em).toLocaleDateString('pt-BR')}</small>
+            </div>
+        </div>`).join('');
+}
+
+document.getElementById('formSenha').onsubmit=async e=>{
+    e.preventDefault();
+    if(document.getElementById('novaSenha').value!==document.getElementById('confirmarSenha').value){
+        alert('As senhas não coincidem!');return;
+    }
+    const d=await api('/colaborador/alterar-senha',{method:'POST',body:JSON.stringify({
+        senha_atual:document.getElementById('senhaAtual').value,
+        nova_senha:document.getElementById('novaSenha').value
+    })});
+    if(d&&d.sucesso){alert('Senha alterada com sucesso!');e.target.reset();}
+    else alert(d?.erro||'Erro ao alterar senha');
+};
+
+document.getElementById('formSolicitacao').onsubmit=async e=>{
+    e.preventDefault();
+    const d=await api('/colaborador/solicitacao-alteracao',{method:'POST',body:JSON.stringify({
+        tipo:document.getElementById('tipoSolicitacao').value,
+        descricao:document.getElementById('descricaoSolicitacao').value
+    })});
+    if(d&&d.sucesso){alert('Solicitação enviada com sucesso!');e.target.reset();loadSolicitacoes();}
+    else alert(d?.erro||'Erro ao enviar solicitação');
+};
+
+// ==================== AVALIAÇÕES ====================
+
+async function loadAvaliacoes(){
+    await loadAvaliacoesPendentes();
+    await loadMinhasAvaliacoes();
+}
+
+async function loadAvaliacoesPendentes(){
+    const d = await api('/colaborador/avaliacoes/pendentes');
+    const container = document.getElementById('avaliacoesPendentes');
+    
+    if(!d || !d.dados || d.dados.length === 0){
+        container.innerHTML = `
+            <div style="text-align:center;padding:24px;color:var(--text-secondary)">
+                <p>🎉 Você não tem avaliações pendentes!</p>
+                <p style="font-size:13px;margin-top:8px">Após retirar seu gás, volte aqui para avaliar o atendimento.</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = d.dados.map(r => `
+        <div class="avaliacao-card" id="aval-${r.retirada_id}">
+            <div class="avaliacao-header">
+                <div class="avaliacao-info">
+                    <h4>${r.distribuidor_nome}</h4>
+                    <p>${r.cidade}/${r.estado} • Retirada em ${new Date(r.data_retirada).toLocaleDateString('pt-BR')}</p>
+                    <p style="font-size:12px;color:var(--primary)">Vale: ${r.codigo} (${formatarMes(r.mes_referencia)})</p>
+                </div>
+            </div>
+            <div class="avaliacao-form">
+                <p style="font-size:13px;margin-bottom:8px;font-weight:500">Como foi o atendimento?</p>
+                <div class="estrelas" data-retirada="${r.retirada_id}">
+                    ${[1,2,3,4,5].map(n => `<span class="estrela" data-nota="${n}" onclick="selecionarEstrela(${r.retirada_id}, ${n})">★</span>`).join('')}
+                </div>
+                <textarea id="comentario-${r.retirada_id}" placeholder="Deixe um comentário (opcional)..." style="margin-top:12px"></textarea>
+                <button class="btn btn-primary" onclick="enviarAvaliacao(${r.retirada_id})">Enviar Avaliação</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selecionarEstrela(retiradaId, nota){
+    const container = document.querySelector(`.estrelas[data-retirada="${retiradaId}"]`);
+    container.dataset.nota = nota;
+    container.querySelectorAll('.estrela').forEach((e, i) => {
+        e.classList.toggle('active', i < nota);
+    });
+}
+
+async function enviarAvaliacao(retiradaId){
+    const container = document.querySelector(`.estrelas[data-retirada="${retiradaId}"]`);
+    const nota = parseInt(container.dataset.nota);
+    const comentario = document.getElementById(`comentario-${retiradaId}`).value;
+    
+    if(!nota || nota < 1 || nota > 5){
+        alert('Por favor, selecione uma nota de 1 a 5 estrelas');
+        return;
+    }
+    
+    const d = await api('/colaborador/avaliacoes', {
+        method: 'POST',
+        body: JSON.stringify({ retirada_id: retiradaId, nota, comentario })
+    });
+    
+    if(d && d.sucesso){
+        alert('✅ ' + d.mensagem);
+        loadAvaliacoes();
+    } else {
+        alert(d?.erro || 'Erro ao enviar avaliação');
+    }
+}
+
+async function loadMinhasAvaliacoes(){
+    const d = await api('/colaborador/avaliacoes');
+    const container = document.getElementById('minhasAvaliacoes');
+    
+    if(!d || !d.dados || d.dados.length === 0){
+        container.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-secondary)">Você ainda não fez nenhuma avaliação.</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <table>
+            <thead>
+                <tr><th>Distribuidor</th><th>Vale</th><th>Nota</th><th>Data</th></tr>
+            </thead>
+            <tbody>
+                ${d.dados.map(a => `
+                    <tr>
+                        <td>${a.distribuidor_nome}</td>
+                        <td>${a.codigo}</td>
+                        <td><span class="estrelas-display">${'★'.repeat(a.nota)}${'☆'.repeat(5-a.nota)}</span></td>
+                        <td>${new Date(a.criado_em).toLocaleDateString('pt-BR')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function formatarMes(mes){
+    const [ano, m] = mes.split('-');
+    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return meses[parseInt(m)-1] + '/' + ano;
+}
+
+// Init
+loadVale();
+loadHistorico();
+loadDistribuidores();
+loadPerfil();
+loadSolicitacoes();
+</script>
+</body>
+</html>
