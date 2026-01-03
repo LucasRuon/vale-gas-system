@@ -16,6 +16,13 @@ if (!fs.existsSync(DATA_DIR)) {
 
 const DB_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, 'database.sqlite');
 
+// Log importante para verificar persistência
+console.log('📊 Configuração do Banco de Dados:');
+console.log('   • Ambiente:', process.env.RAILWAY_ENVIRONMENT ? 'RAILWAY (Produção)' : 'LOCAL (Desenvolvimento)');
+console.log('   • Diretório de dados:', DATA_DIR);
+console.log('   • Caminho do banco:', DB_PATH);
+console.log('   • Volume persistente:', process.env.RAILWAY_ENVIRONMENT ? 'SIM (/data)' : 'NÃO (./data)');
+
 const db = new sqlite3.Database(DB_PATH);
 
 // Habilitar foreign keys
