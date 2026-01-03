@@ -80,7 +80,7 @@ app.use(cors({
 // Rate limit para login (ajustado por ambiente)
 const loginLimiter = rateLimit({
     windowMs: isDevelopment ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min (dev) ou 15 min (prod)
-    max: isDevelopment ? 100 : 10, // 100 tentativas (dev) ou 10 (prod)
+    max: isDevelopment ? 100 : 50, // 100 tentativas (dev) ou 50 (prod) - Aumentado para testes
     message: {
         erro: isDevelopment
             ? 'Muitas tentativas de login. Aguarde 1 minuto.'
