@@ -77,12 +77,14 @@ app.use(cors({
 // RATE LIMITING
 // ========================================
 
-// Rate limit para login (mais restritivo)
+// Rate limit para login (ajustado por ambiente)
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // 5 tentativas
+    windowMs: isDevelopment ? 1 * 60 * 1000 : 15 * 60 * 1000, // 1 min (dev) ou 15 min (prod)
+    max: isDevelopment ? 100 : 10, // 100 tentativas (dev) ou 10 (prod)
     message: {
-        erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+        erro: isDevelopment
+            ? 'Muitas tentativas de login. Aguarde 1 minuto.'
+            : 'Muitas tentativas de login. Tente novamente em 15 minutos.',
         tentativas_restantes: 0
     },
     standardHeaders: true,
@@ -90,23 +92,29 @@ const loginLimiter = rateLimit({
     handler: (req, res) => {
         logger.logSecurity('Rate limit excedido - Login', {
             ip: req.ip,
-            url: req.originalUrl
+            url: req.originalUrl,
+            ambiente: process.env.NODE_ENV
         });
         res.status(429).json({
-            erro: 'Muitas tentativas de login. Tente novamente em 15 minutos.'
+            erro: isDevelopment
+                ? 'Muitas tentativas de login. Aguarde 1 minuto.'
+                : 'Muitas tentativas de login. Tente novamente em 15 minutos.'
         });
-    }
+    },
+    // Pular rate limit se variável de ambiente estiver definida
+    skip: (req) => process.env.DISABLE_RATE_LIMIT === 'true'
 });
 
 // Rate limit geral para API
 const apiLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minuto
-    max: 100, // 100 requisições por minuto
+    max: isDevelopment ? 1000 : 100, // 1000 (dev) ou 100 (prod) requisições por minuto
     message: {
         erro: 'Muitas requisições. Aguarde um momento.',
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: (req) => process.env.DISABLE_RATE_LIMIT === 'true'
 });
 
 // ========================================
