@@ -270,21 +270,107 @@ const initDatabase = async () => {
             nota INTEGER NOT NULL CHECK(nota >= 1 AND nota <= 5),
             comentario TEXT,
             criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-            
+
             FOREIGN KEY (retirada_id) REFERENCES historico_retiradas(id),
             FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id),
             FOREIGN KEY (distribuidor_id) REFERENCES distribuidores(id),
-            
+
             UNIQUE(retirada_id)
         )
     `);
+
+    // Tabela de Reembolsos (Distribuidores Externos)
+    await runQuery(`
+        CREATE TABLE IF NOT EXISTS reembolsos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vale_id INTEGER NOT NULL,
+            distribuidor_id INTEGER NOT NULL,
+            colaborador_id INTEGER NOT NULL,
+
+            -- Dados financeiros
+            valor DECIMAL(10,2) NOT NULL,
+            mes_referencia TEXT NOT NULL,
+
+            -- Status e aprovação
+            status TEXT CHECK(status IN ('a_validar', 'aprovado', 'pago', 'rejeitado')) DEFAULT 'a_validar',
+            observacoes TEXT,
+            motivo_rejeicao TEXT,
+
+            -- Comprovantes e documentos
+            comprovante_nf TEXT,  -- Caminho do arquivo da Nota Fiscal
+            comprovante_recibo TEXT,  -- Caminho do arquivo do Recibo
+            comprovante_pagamento TEXT,  -- Comprovante de pagamento feito pelo RH
+
+            -- Dados bancários do distribuidor (opcional, pode vir do cadastro)
+            banco TEXT,
+            agencia TEXT,
+            conta TEXT,
+            tipo_conta TEXT CHECK(tipo_conta IN ('corrente', 'poupanca')),
+            pix TEXT,
+
+            -- Datas de controle
+            data_validacao DATETIME,  -- Quando o vale foi validado (origem do reembolso)
+            data_aprovacao DATETIME,  -- Quando o RH aprovou
+            data_pagamento DATETIME,  -- Quando foi marcado como pago
+            data_rejeicao DATETIME,
+
+            -- Responsáveis
+            aprovado_por INTEGER,  -- ID do admin que aprovou
+            pago_por INTEGER,  -- ID do admin que marcou como pago
+            rejeitado_por INTEGER,  -- ID do admin que rejeitou
+
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (vale_id) REFERENCES vales(id),
+            FOREIGN KEY (distribuidor_id) REFERENCES distribuidores(id),
+            FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id),
+            FOREIGN KEY (aprovado_por) REFERENCES usuarios_admin(id),
+            FOREIGN KEY (pago_por) REFERENCES usuarios_admin(id),
+            FOREIGN KEY (rejeitado_por) REFERENCES usuarios_admin(id)
+        )
+    `);
+
+    // Tabela de Histórico de Alterações de Reembolsos (Trilha de Auditoria)
+    await runQuery(`
+        CREATE TABLE IF NOT EXISTS historico_reembolsos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            reembolso_id INTEGER NOT NULL,
+            admin_id INTEGER NOT NULL,
+            admin_nome TEXT NOT NULL,
+
+            status_anterior TEXT,
+            status_novo TEXT NOT NULL,
+
+            campo_alterado TEXT,  -- 'status', 'valor', 'observacoes', etc.
+            valor_anterior TEXT,
+            valor_novo TEXT,
+
+            acao TEXT NOT NULL,  -- 'criado', 'aprovado', 'pago', 'rejeitado', 'editado'
+            observacao TEXT,
+
+            ip TEXT,
+            criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (reembolso_id) REFERENCES reembolsos(id),
+            FOREIGN KEY (admin_id) REFERENCES usuarios_admin(id)
+        )
+    `);
+
+    // Índices para performance de reembolsos
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_reembolsos_status ON reembolsos(status)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_reembolsos_mes ON reembolsos(mes_referencia)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_reembolsos_distribuidor ON reembolsos(distribuidor_id)`);
+    await runQuery(`CREATE INDEX IF NOT EXISTS idx_historico_reembolsos ON historico_reembolsos(reembolso_id)`);
 
     // Inserir configurações padrão se não existirem
     const configPadrao = [
         { chave: 'vales_por_mes', valor: '1', descricao: 'Quantidade de vales por colaborador por mês' },
         { chave: 'dias_validade_vale', valor: '30', descricao: 'Dias de validade do vale após geração' },
         { chave: 'dia_geracao_automatica', valor: '1', descricao: 'Dia do mês para geração automática de vales' },
-        { chave: 'notificar_expiracao_dias', valor: '7,3,1', descricao: 'Dias antes da expiração para enviar lembrete' }
+        { chave: 'notificar_expiracao_dias', valor: '7,3,1', descricao: 'Dias antes da expiração para enviar lembrete' },
+        { chave: 'valor_reembolso_padrao', valor: '100.00', descricao: 'Valor padrão de reembolso por vale (R$)' },
+        { chave: 'gerar_reembolso_automatico', valor: 'true', descricao: 'Gerar reembolso automaticamente ao validar vale' }
     ];
 
     for (const config of configPadrao) {

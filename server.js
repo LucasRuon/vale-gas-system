@@ -171,6 +171,9 @@ app.use('/api', apiLimiter);
 // Rotas do painel admin (RH)
 app.use('/api/admin', require('./routes/admin'));
 
+// Rotas de reembolsos (admin)
+app.use('/api/admin/reembolsos', require('./routes/reembolsos'));
+
 // Rotas do painel colaborador
 app.use('/api/colaborador', require('./routes/colaborador'));
 

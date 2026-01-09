@@ -226,6 +226,35 @@ router.post('/confirmar-retirada', async (req, res) => {
             vale.mes_referencia
         );
 
+        // Criar reembolso automaticamente se configurado
+        const configReembolsoAuto = await getQuery(
+            'SELECT valor FROM configuracoes WHERE chave = ?',
+            ['gerar_reembolso_automatico']
+        );
+
+        if (configReembolsoAuto && configReembolsoAuto.valor === 'true') {
+            // Buscar valor padrão de reembolso
+            const configValor = await getQuery(
+                'SELECT valor FROM configuracoes WHERE chave = ?',
+                ['valor_reembolso_padrao']
+            );
+
+            const valorReembolso = configValor ? parseFloat(configValor.valor) : 100.00;
+
+            // Criar reembolso
+            await runQuery(`
+                INSERT INTO reembolsos
+                (vale_id, distribuidor_id, colaborador_id, valor, mes_referencia, data_validacao, status)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'a_validar')
+            `, [vale.id, req.usuario.id, vale.colaborador_id, valorReembolso, vale.mes_referencia]);
+
+            logger.logInfo('Reembolso criado automaticamente', {
+                vale_id: vale.id,
+                distribuidor_id: req.usuario.id,
+                valor: valorReembolso
+            });
+        }
+
         res.json({
             sucesso: true,
             mensagem: 'Retirada confirmada com sucesso!',
