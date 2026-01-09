@@ -5,6 +5,20 @@
 let reembolsoAtual = null;
 let paginaAtualReembolsos = 1;
 
+// Função auxiliar para mostrar notificações
+function mostrarToast(mensagem, tipo = 'info') {
+    // Usar alert simples como fallback
+    if (typeof tipo === 'string' && tipo === 'error') {
+        console.error(mensagem);
+        alert('❌ ' + mensagem);
+    } else if (tipo === 'success') {
+        console.log('✅', mensagem);
+        // Sucesso é silencioso para não irritar o usuário
+    } else {
+        console.info(mensagem);
+    }
+}
+
 // Carregar estatísticas de reembolsos
 async function carregarEstatisticasReembolsos() {
     try {
@@ -510,8 +524,29 @@ async function exportarReembolsosCSV() {
         const mes = document.getElementById('filtro-mes-reembolso')?.value;
         if (mes) params.append('mes_referencia', mes);
 
-        window.open(`/api/admin/reembolsos/exportar/csv?${params}&token=${token}`, '_blank');
-        mostrarToast('Exportando relatório...', 'success');
+        mostrarToast('Exportando relatório...', 'info');
+
+        // Fazer fetch com token no header
+        const response = await fetch(`/api/admin/reembolsos/exportar/csv?${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao exportar');
+        }
+
+        // Criar blob e fazer download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reembolsos-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        mostrarToast('CSV exportado com sucesso!', 'success');
 
     } catch (error) {
         console.error('Erro ao exportar:', error);
@@ -613,3 +648,27 @@ async function carregarDistribuidoresFiltro() {
         console.error('Erro ao carregar distribuidores:', error);
     }
 }
+
+// Expor funções globalmente para event handlers inline
+window.carregarReembolsos = carregarReembolsos;
+window.carregarEstatisticasReembolsos = carregarEstatisticasReembolsos;
+window.carregarDistribuidoresFiltro = carregarDistribuidoresFiltro;
+window.exportarReembolsosCSV = exportarReembolsosCSV;
+window.limparFiltrosReembolsos = limparFiltrosReembolsos;
+window.abrirModalNovoReembolso = abrirModalNovoReembolso;
+window.abrirModalDetalhes = abrirModalDetalhes;
+window.abrirModalAprovar = abrirModalAprovar;
+window.abrirModalRejeitar = abrirModalRejeitar;
+window.abrirModalMarcarPago = abrirModalMarcarPago;
+window.abrirModalUpload = abrirModalUpload;
+window.fecharModal = fecharModal;
+window.confirmarAprovacao = confirmarAprovacao;
+window.confirmarRejeicao = confirmarRejeicao;
+window.confirmarPagamento = confirmarPagamento;
+window.enviarComprovantes = enviarComprovantes;
+window.criarReembolsoManual = criarReembolsoManual;
+window.buscarValePorCodigo = buscarValePorCodigo;
+window.baixarArquivo = baixarArquivo;
+window.confirmarDelecao = confirmarDelecao;
+
+console.log('✅ Funções de reembolsos expostas globalmente');
