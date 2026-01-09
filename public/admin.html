@@ -2565,12 +2565,14 @@ fetch('/reembolsos-section.html')
     .then(r => r.text())
     .then(html => {
         document.getElementById('s-reembolsos').innerHTML = html;
+
+        // Carregar o script após o HTML estar inserido
+        const script = document.createElement('script');
+        script.src = '/reembolsos-script.js';
+        document.body.appendChild(script);
     })
     .catch(err => console.error('Erro ao carregar seção de reembolsos:', err));
 </script>
-
-<!-- SCRIPT REEMBOLSOS -->
-<script src="/reembolsos-script.js"></script>
 
 </body>
 </html>
