@@ -341,6 +341,9 @@
                 </div>
             </div>
 
+            <!-- Reembolsos - Ver public/reembolsos-section.html -->
+            <div id="s-reembolsos" class="section"></div>
+
             <!-- Solicitações -->
             <div id="s-solicitacoes" class="section">
                 <h1 class="page-title">Solicitações</h1>
@@ -639,6 +642,7 @@
                     <div id="paginacaoAuditoria" style="margin-top:16px;display:flex;gap:8px;justify-content:center"></div>
                 </div>
             </div>
+
         </main>
     </div>
 
@@ -967,6 +971,7 @@ document.querySelectorAll('.sidebar-menu a').forEach(a=>a.onclick=e=>{
     if(a.dataset.section==='colaboradores')loadColabs();
     if(a.dataset.section==='distribuidores')loadDists();
     if(a.dataset.section==='vales')loadVales();
+    if(a.dataset.section==='reembolsos'){carregarReembolsos(1);carregarEstatisticasReembolsos();carregarDistribuidoresFiltro();}
     if(a.dataset.section==='solicitacoes')loadSolic();
     if(a.dataset.section==='usuarios'){loadUsuarios();loadSolicSenha();}
     if(a.dataset.section==='notificacoes'){loadWebhookStats();loadWebhookLogs();}
@@ -2554,6 +2559,18 @@ document.getElementById('dCnpj').addEventListener('input',function(e){
 
 // Init
 loadDash();
+
+// Carregar seção de reembolsos dinamicamente
+fetch('/reembolsos-section.html')
+    .then(r => r.text())
+    .then(html => {
+        document.getElementById('s-reembolsos').innerHTML = html;
+    })
+    .catch(err => console.error('Erro ao carregar seção de reembolsos:', err));
 </script>
+
+<!-- SCRIPT REEMBOLSOS -->
+<script src="/reembolsos-script.js"></script>
+
 </body>
 </html>
