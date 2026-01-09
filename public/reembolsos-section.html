@@ -1,0 +1,405 @@
+<!-- SEÇÃO REEMBOLSOS -->
+<div id="s-reembolsos" class="section">
+    <h1 class="page-title">Gestão de Reembolsos</h1>
+
+    <!-- Cards de Estatísticas -->
+    <div class="stats-grid" id="reembolsosStats">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">A Validar</div>
+                <div class="stat-value" id="reembolsos-a-validar">0</div>
+                <div class="stat-description">Aguardando aprovação</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Aprovados</div>
+                <div class="stat-value" id="reembolsos-aprovados">0</div>
+                <div class="stat-description">Aguardando pagamento</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Pagos</div>
+                <div class="stat-value" id="reembolsos-pagos">0</div>
+                <div class="stat-description">Finalizados</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total a Pagar</div>
+                <div class="stat-value" id="reembolsos-total">R$ 0,00</div>
+                <div class="stat-description">Soma aprovados</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card" style="margin-top: 24px;">
+        <div class="card-header">
+            <h3 class="card-title">Filtros</h3>
+            <button class="btn btn-secondary btn-sm" onclick="limparFiltrosReembolsos()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Limpar
+            </button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;padding:16px">
+            <div class="form-group">
+                <label>Status</label>
+                <select id="filtro-status-reembolso" class="form-control" onchange="carregarReembolsos()">
+                    <option value="">Todos</option>
+                    <option value="a_validar">A Validar</option>
+                    <option value="aprovado">Aprovado</option>
+                    <option value="pago">Pago</option>
+                    <option value="rejeitado">Rejeitado</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Distribuidor</label>
+                <select id="filtro-distribuidor-reembolso" class="form-control" onchange="carregarReembolsos()">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Mês Referência</label>
+                <input type="month" id="filtro-mes-reembolso" class="form-control" onchange="carregarReembolsos()">
+            </div>
+
+            <div class="form-group">
+                <label>Data Início</label>
+                <input type="date" id="filtro-data-inicio-reembolso" class="form-control" onchange="carregarReembolsos()">
+            </div>
+
+            <div class="form-group">
+                <label>Data Fim</label>
+                <input type="date" id="filtro-data-fim-reembolso" class="form-control" onchange="carregarReembolsos()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Reembolsos -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Lista de Reembolsos</h3>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-success btn-sm" onclick="exportarReembolsosCSV()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Exportar CSV
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="abrirModalNovoReembolso()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Novo Reembolso
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table" id="tabelaReembolsos">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Distribuidor</th>
+                        <th>Colaborador</th>
+                        <th>Vale</th>
+                        <th>Mês Ref.</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Data Val.</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="listaReembolsos">
+                    <tr>
+                        <td colspan="9" style="text-align:center;padding:40px">
+                            <div class="spinner" style="margin:20px auto"></div>
+                            Carregando reembolsos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="paginacaoReembolsos" class="pagination" style="padding:16px"></div>
+    </div>
+</div>
+
+<!-- MODAL DETALHES REEMBOLSO -->
+<div id="modalDetalhesReembolso" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h2>Detalhes do Reembolso #<span id="det-reembolso-id"></span></h2>
+            <button class="modal-close" onclick="fecharModal('modalDetalhesReembolso')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Informações Principais -->
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-header">
+                    <h3 class="card-title">Informações Principais</h3>
+                    <span id="det-status-badge"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;padding:16px">
+                    <div>
+                        <strong>Distribuidor:</strong><br>
+                        <span id="det-distribuidor"></span>
+                    </div>
+                    <div>
+                        <strong>CNPJ:</strong><br>
+                        <span id="det-cnpj"></span>
+                    </div>
+                    <div>
+                        <strong>Colaborador:</strong><br>
+                        <span id="det-colaborador"></span>
+                    </div>
+                    <div>
+                        <strong>CPF:</strong><br>
+                        <span id="det-cpf"></span>
+                    </div>
+                    <div>
+                        <strong>Código Vale:</strong><br>
+                        <span id="det-codigo-vale"></span>
+                    </div>
+                    <div>
+                        <strong>Mês Referência:</strong><br>
+                        <span id="det-mes-ref"></span>
+                    </div>
+                    <div>
+                        <strong>Valor:</strong><br>
+                        <span id="det-valor" style="font-size:20px;font-weight:600;color:var(--success)"></span>
+                    </div>
+                    <div>
+                        <strong>Data Validação:</strong><br>
+                        <span id="det-data-validacao"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dados Bancários -->
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-header">
+                    <h3 class="card-title">Dados Bancários</h3>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:16px">
+                    <div>
+                        <strong>Banco:</strong><br>
+                        <span id="det-banco"></span>
+                    </div>
+                    <div>
+                        <strong>Agência:</strong><br>
+                        <span id="det-agencia"></span>
+                    </div>
+                    <div>
+                        <strong>Conta:</strong><br>
+                        <span id="det-conta"></span>
+                    </div>
+                    <div>
+                        <strong>Tipo:</strong><br>
+                        <span id="det-tipo-conta"></span>
+                    </div>
+                    <div>
+                        <strong>PIX:</strong><br>
+                        <span id="det-pix"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comprovantes -->
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-header">
+                    <h3 class="card-title">Comprovantes</h3>
+                    <button class="btn btn-primary btn-sm" onclick="abrirModalUpload()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Anexar Arquivos
+                    </button>
+                </div>
+                <div id="listaComprovantes" style="padding:16px">
+                    <!-- Será preenchido dinamicamente -->
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="card" style="margin-bottom:20px" id="card-observacoes">
+                <div class="card-header">
+                    <h3 class="card-title">Observações</h3>
+                </div>
+                <div style="padding:16px">
+                    <p id="det-observacoes" style="white-space:pre-wrap"></p>
+                </div>
+            </div>
+
+            <!-- Histórico de Alterações -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Histórico de Alterações</h3>
+                </div>
+                <div id="historicoReembolso" style="padding:16px">
+                    <!-- Será preenchido dinamicamente -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <div id="acoesReembolso" style="display:flex;gap:8px;width:100%">
+                <!-- Ações dinâmicas baseadas no status -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL APROVAR REEMBOLSO -->
+<div id="modalAprovarReembolso" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Aprovar Reembolso</h2>
+            <button class="modal-close" onclick="fecharModal('modalAprovarReembolso')">&times;</button>
+        </div>
+        <form onsubmit="confirmarAprovacao(event)">
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    Você está prestes a aprovar este reembolso. Após a aprovação, ele ficará pendente de pagamento.
+                </div>
+                <div class="form-group">
+                    <label>Observações (opcional)</label>
+                    <textarea id="aprovar-observacoes" class="form-control" rows="3" placeholder="Adicione observações sobre a aprovação..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal('modalAprovarReembolso')">Cancelar</button>
+                <button type="submit" class="btn btn-success">Aprovar Reembolso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL REJEITAR REEMBOLSO -->
+<div id="modalRejeitarReembolso" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Rejeitar Reembolso</h2>
+            <button class="modal-close" onclick="fecharModal('modalRejeitarReembolso')">&times;</button>
+        </div>
+        <form onsubmit="confirmarRejeicao(event)">
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    Você está prestes a rejeitar este reembolso. Esta ação registrará o motivo da rejeição.
+                </div>
+                <div class="form-group">
+                    <label>Motivo da Rejeição *</label>
+                    <textarea id="rejeitar-motivo" class="form-control" rows="4" placeholder="Descreva o motivo da rejeição..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal('modalRejeitarReembolso')">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Rejeitar Reembolso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL MARCAR COMO PAGO -->
+<div id="modalMarcarPago" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Marcar como Pago</h2>
+            <button class="modal-close" onclick="fecharModal('modalMarcarPago')">&times;</button>
+        </div>
+        <form onsubmit="confirmarPagamento(event)">
+            <div class="modal-body">
+                <div class="alert alert-success">
+                    Confirme que o pagamento foi realizado e anexe o comprovante.
+                </div>
+                <div class="form-group">
+                    <label>Observações sobre o Pagamento (opcional)</label>
+                    <textarea id="pago-observacoes" class="form-control" rows="3" placeholder="Ex: Pago via PIX em DD/MM/YYYY..."></textarea>
+                </div>
+                <div class="alert alert-warning">
+                    <strong>Lembre-se:</strong> Anexe o comprovante de pagamento após marcar como pago.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal('modalMarcarPago')">Cancelar</button>
+                <button type="submit" class="btn btn-success">Confirmar Pagamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL UPLOAD DE ARQUIVOS -->
+<div id="modalUploadReembolso" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Anexar Comprovantes</h2>
+            <button class="modal-close" onclick="fecharModal('modalUploadReembolso')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nota Fiscal (PDF, JPG, PNG)</label>
+                <input type="file" id="upload-nf" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.xml">
+            </div>
+            <div class="form-group">
+                <label>Recibo (PDF, JPG, PNG)</label>
+                <input type="file" id="upload-recibo" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+            <div class="form-group">
+                <label>Comprovante de Pagamento (PDF, JPG, PNG)</label>
+                <input type="file" id="upload-pagamento" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalUploadReembolso')">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="enviarComprovantes()">Enviar Arquivos</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NOVO REEMBOLSO MANUAL -->
+<div id="modalNovoReembolso" class="modal">
+    <div class="modal-content" style="max-width:700px">
+        <div class="modal-header">
+            <h2>Criar Reembolso Manualmente</h2>
+            <button class="modal-close" onclick="fecharModal('modalNovoReembolso')">&times;</button>
+        </div>
+        <form onsubmit="criarReembolsoManual(event)">
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    Use este formulário para criar um reembolso manualmente para vales já validados.
+                </div>
+
+                <div class="form-group">
+                    <label>Vale (Código) *</label>
+                    <input type="text" id="novo-vale-codigo" class="form-control" placeholder="Digite o código do vale" required>
+                    <small>Buscar vale validado pelo código</small>
+                </div>
+
+                <div id="novo-reembolso-dados" style="display:none">
+                    <div class="form-group">
+                        <label>Valor do Reembolso (R$) *</label>
+                        <input type="number" id="novo-valor" class="form-control" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Observações</label>
+                        <textarea id="novo-observacoes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="fecharModal('modalNovoReembolso')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Criar Reembolso</button>
+            </div>
+        </form>
+    </div>
+</div>
