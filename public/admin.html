@@ -101,7 +101,7 @@
 
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-card { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px var(--shadow-color); border: 1px solid var(--border-color); transition: background 0.3s, border-color 0.3s; }
+        .stat-card { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px var(--shadow-color); border: 1px solid var(--border-color); transition: background 0.3s, border-color 0.3s; display: flex; align-items: center; gap: 16px; }
         .stat-card-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
         .stat-card-icon.blue { background: rgba(5, 52, 98, 0.1); color: var(--primary); }
         .stat-card-icon.green { background: rgba(16, 185, 129, 0.1); color: var(--success); }
@@ -109,6 +109,12 @@
         .stat-card-icon.red { background: rgba(220, 62, 49, 0.1); color: var(--accent); }
         .stat-card h3 { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
         .stat-card p { font-size: 13px; color: var(--text-secondary); }
+        .stat-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-icon svg { width: 30px; height: 30px; }
+        .stat-content { flex: 1; }
+        .stat-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; line-height: 1; }
+        .stat-description { font-size: 12px; color: var(--text-secondary); }
 
         /* Buttons */
         .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
@@ -971,7 +977,13 @@ document.querySelectorAll('.sidebar-menu a').forEach(a=>a.onclick=e=>{
     if(a.dataset.section==='colaboradores')loadColabs();
     if(a.dataset.section==='distribuidores')loadDists();
     if(a.dataset.section==='vales')loadVales();
-    if(a.dataset.section==='reembolsos'){carregarReembolsos(1);carregarEstatisticasReembolsos();carregarDistribuidoresFiltro();}
+    if(a.dataset.section==='reembolsos'){
+        if(typeof carregarReembolsos === 'function'){
+            carregarReembolsos(1);
+            carregarEstatisticasReembolsos();
+            carregarDistribuidoresFiltro();
+        }
+    }
     if(a.dataset.section==='solicitacoes')loadSolic();
     if(a.dataset.section==='usuarios'){loadUsuarios();loadSolicSenha();}
     if(a.dataset.section==='notificacoes'){loadWebhookStats();loadWebhookLogs();}
@@ -2569,6 +2581,15 @@ fetch('/reembolsos-section.html')
         // Carregar o script após o HTML estar inserido
         const script = document.createElement('script');
         script.src = '/reembolsos-script.js';
+        script.onload = () => {
+            console.log('✅ Script de reembolsos carregado');
+            // Inicializar se a seção de reembolsos estiver ativa
+            if(document.getElementById('s-reembolsos').classList.contains('active')) {
+                carregarReembolsos(1);
+                carregarEstatisticasReembolsos();
+                carregarDistribuidoresFiltro();
+            }
+        };
         document.body.appendChild(script);
     })
     .catch(err => console.error('Erro ao carregar seção de reembolsos:', err));
