@@ -233,26 +233,43 @@ router.post('/confirmar-retirada', async (req, res) => {
         );
 
         if (configReembolsoAuto && configReembolsoAuto.valor === 'true') {
-            // Buscar valor padrão de reembolso
-            const configValor = await getQuery(
-                'SELECT valor FROM configuracoes WHERE chave = ?',
-                ['valor_reembolso_padrao']
+            // Verificar se é distribuidor externo (apenas externos recebem reembolso)
+            const distribuidor = await getQuery(
+                'SELECT tipo_distribuidor FROM distribuidores WHERE id = ?',
+                [req.usuario.id]
             );
 
-            const valorReembolso = configValor ? parseFloat(configValor.valor) : 100.00;
+            const isExterno = !distribuidor || !distribuidor.tipo_distribuidor || distribuidor.tipo_distribuidor === 'externo';
 
-            // Criar reembolso
-            await runQuery(`
-                INSERT INTO reembolsos
-                (vale_id, distribuidor_id, colaborador_id, valor, mes_referencia, data_validacao, status)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'a_validar')
-            `, [vale.id, req.usuario.id, vale.colaborador_id, valorReembolso, vale.mes_referencia]);
+            if (isExterno) {
+                // Buscar valor padrão de reembolso
+                const configValor = await getQuery(
+                    'SELECT valor FROM configuracoes WHERE chave = ?',
+                    ['valor_reembolso_padrao']
+                );
 
-            logger.logInfo('Reembolso criado automaticamente', {
-                vale_id: vale.id,
-                distribuidor_id: req.usuario.id,
-                valor: valorReembolso
-            });
+                const valorReembolso = configValor ? parseFloat(configValor.valor) : 100.00;
+
+                // Criar reembolso
+                await runQuery(`
+                    INSERT INTO reembolsos
+                    (vale_id, distribuidor_id, colaborador_id, valor, mes_referencia, data_validacao, status)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'a_validar')
+                `, [vale.id, req.usuario.id, vale.colaborador_id, valorReembolso, vale.mes_referencia]);
+
+                logger.logInfo('Reembolso criado automaticamente', {
+                    vale_id: vale.id,
+                    distribuidor_id: req.usuario.id,
+                    valor: valorReembolso,
+                    tipo: 'externo'
+                });
+            } else {
+                logger.logInfo('Reembolso não criado (distribuidor interno)', {
+                    vale_id: vale.id,
+                    distribuidor_id: req.usuario.id,
+                    tipo: 'interno'
+                });
+            }
         }
 
         res.json({

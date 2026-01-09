@@ -118,7 +118,10 @@ const initDatabase = async () => {
             senha TEXT NOT NULL,
             telefone TEXT NOT NULL,
             responsavel TEXT NOT NULL,
-            
+
+            -- Tipo de distribuidor (interno = Consigaz, externo = recebe reembolso)
+            tipo_distribuidor TEXT CHECK(tipo_distribuidor IN ('interno', 'externo')) DEFAULT 'externo',
+
             -- Endereço
             cep TEXT NOT NULL,
             logradouro TEXT NOT NULL,
@@ -366,6 +369,20 @@ const initDatabase = async () => {
     await runQuery(`CREATE INDEX IF NOT EXISTS idx_reembolsos_mes ON reembolsos(mes_referencia)`);
     await runQuery(`CREATE INDEX IF NOT EXISTS idx_reembolsos_distribuidor ON reembolsos(distribuidor_id)`);
     await runQuery(`CREATE INDEX IF NOT EXISTS idx_historico_reembolsos ON historico_reembolsos(reembolso_id)`);
+
+    // MIGRAÇÃO: Adicionar coluna tipo_distribuidor se não existir
+    try {
+        const columns = await allQuery(`PRAGMA table_info(distribuidores)`);
+        const hasTipoDistribuidor = columns.some(col => col.name === 'tipo_distribuidor');
+
+        if (!hasTipoDistribuidor) {
+            console.log('   → Migrando tabela distribuidores: adicionando tipo_distribuidor...');
+            await runQuery(`ALTER TABLE distribuidores ADD COLUMN tipo_distribuidor TEXT CHECK(tipo_distribuidor IN ('interno', 'externo')) DEFAULT 'externo'`);
+            console.log('   ✓ Coluna tipo_distribuidor adicionada com sucesso');
+        }
+    } catch (error) {
+        console.error('   ⚠️  Erro ao adicionar coluna tipo_distribuidor:', error.message);
+    }
 
     // Inserir configurações padrão se não existirem
     const configPadrao = [

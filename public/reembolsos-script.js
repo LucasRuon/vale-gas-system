@@ -93,7 +93,9 @@ async function carregarReembolsos(page = 1) {
             <tr>
                 <td>${r.id}</td>
                 <td>
-                    <strong>${r.distribuidor_nome || '-'}</strong><br>
+                    <strong>${r.distribuidor_nome || '-'}</strong>
+                    ${r.distribuidor_tipo === 'interno' ? '<span class="badge badge-secondary" style="margin-left:8px;font-size:10px">Interno</span>' : ''}
+                    <br>
                     <small style="color:var(--text-secondary)">${r.distribuidor_cnpj || '-'}</small>
                 </td>
                 <td>

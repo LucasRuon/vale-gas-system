@@ -86,6 +86,7 @@ router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
                 r.*,
                 d.nome as distribuidor_nome,
                 d.cnpj as distribuidor_cnpj,
+                d.tipo_distribuidor as distribuidor_tipo,
                 c.nome as colaborador_nome,
                 c.cpf as colaborador_cpf,
                 v.codigo as codigo_vale,
