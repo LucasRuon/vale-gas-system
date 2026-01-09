@@ -593,6 +593,7 @@ const startServer = async () => {
         });
 
         // Inicializar banco de dados
+        console.log('⏳ Iniciando database.initDatabase()...');
         await initDatabase();
 
         console.log('✅ Database initialized, starting server...');

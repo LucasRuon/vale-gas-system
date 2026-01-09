@@ -63,6 +63,7 @@ const initDatabase = async () => {
     console.log('🔧 Inicializando banco de dados...');
 
     // Tabela de Usuários do Sistema (RH/Admin)
+    console.log('   → Criando tabela usuarios_admin...');
     await runQuery(`
         CREATE TABLE IF NOT EXISTS usuarios_admin (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -280,6 +281,7 @@ const initDatabase = async () => {
     `);
 
     // Tabela de Reembolsos (Distribuidores Externos)
+    console.log('   → Criando tabela reembolsos...');
     await runQuery(`
         CREATE TABLE IF NOT EXISTS reembolsos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -322,7 +324,7 @@ const initDatabase = async () => {
             criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
             atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-            FOREIGN KEY (vale_id) REFERENCES vales(id),
+            FOREIGN KEY (vale_id) REFERENCES vales_gas(id),
             FOREIGN KEY (distribuidor_id) REFERENCES distribuidores(id),
             FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id),
             FOREIGN KEY (aprovado_por) REFERENCES usuarios_admin(id),
@@ -330,8 +332,10 @@ const initDatabase = async () => {
             FOREIGN KEY (rejeitado_por) REFERENCES usuarios_admin(id)
         )
     `);
+    console.log('   ✓ Tabela reembolsos criada');
 
     // Tabela de Histórico de Alterações de Reembolsos (Trilha de Auditoria)
+    console.log('   → Criando tabela historico_reembolsos...');
     await runQuery(`
         CREATE TABLE IF NOT EXISTS historico_reembolsos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

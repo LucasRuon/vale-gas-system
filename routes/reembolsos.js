@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verifyToken, verifyAdmin } = require('../auth');
+const { verificarToken, verificarNivel } = require('../auth');
 const { runQuery, getQuery, allQuery } = require('../database');
 const logger = require('../config/logger');
 
@@ -69,7 +69,7 @@ function formatarReembolso(reembolso) {
 // ========================================
 
 // GET /api/admin/reembolsos - Listar todos os reembolsos com filtros
-router.get('/', verifyToken, verifyAdmin, async (req, res) => {
+router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const {
             status,
@@ -94,7 +94,7 @@ router.get('/', verifyToken, verifyAdmin, async (req, res) => {
             FROM reembolsos r
             LEFT JOIN distribuidores d ON r.distribuidor_id = d.id
             LEFT JOIN colaboradores c ON r.colaborador_id = c.id
-            LEFT JOIN vales v ON r.vale_id = v.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
             LEFT JOIN usuarios_admin aprovador ON r.aprovado_por = aprovador.id
             LEFT JOIN usuarios_admin pagador ON r.pago_por = pagador.id
             WHERE 1=1
@@ -197,7 +197,7 @@ router.get('/', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // GET /api/admin/reembolsos/:id - Detalhes de um reembolso
-router.get('/:id', verifyToken, verifyAdmin, async (req, res) => {
+router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -218,7 +218,7 @@ router.get('/:id', verifyToken, verifyAdmin, async (req, res) => {
             FROM reembolsos r
             LEFT JOIN distribuidores d ON r.distribuidor_id = d.id
             LEFT JOIN colaboradores c ON r.colaborador_id = c.id
-            LEFT JOIN vales v ON r.vale_id = v.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
             LEFT JOIN usuarios_admin aprovador ON r.aprovado_por = aprovador.id
             LEFT JOIN usuarios_admin pagador ON r.pago_por = pagador.id
             LEFT JOIN usuarios_admin rejeitador ON r.rejeitado_por = rejeitador.id
@@ -253,7 +253,7 @@ router.get('/:id', verifyToken, verifyAdmin, async (req, res) => {
 // ========================================
 
 // POST /api/admin/reembolsos - Criar reembolso manualmente
-router.post('/', verifyToken, verifyAdmin, async (req, res) => {
+router.post('/', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const {
             vale_id,
@@ -273,7 +273,7 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
         }
 
         // Verificar se vale existe e foi validado
-        const vale = await getQuery('SELECT * FROM vales WHERE id = ?', [vale_id]);
+        const vale = await getQuery('SELECT * FROM vales_gas WHERE id = ?', [vale_id]);
         if (!vale) {
             return res.status(404).json({ success: false, error: 'Vale não encontrado' });
         }
@@ -332,7 +332,7 @@ router.post('/', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // PUT /api/admin/reembolsos/:id - Editar reembolso
-router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
+router.put('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { valor, observacoes, banco, agencia, conta, tipo_conta, pix } = req.body;
@@ -381,7 +381,7 @@ router.put('/:id', verifyToken, verifyAdmin, async (req, res) => {
 // ========================================
 
 // POST /api/admin/reembolsos/:id/aprovar - Aprovar reembolso
-router.post('/:id/aprovar', verifyToken, verifyAdmin, async (req, res) => {
+router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { observacoes } = req.body;
@@ -433,7 +433,7 @@ router.post('/:id/aprovar', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // POST /api/admin/reembolsos/:id/rejeitar - Rejeitar reembolso
-router.post('/:id/rejeitar', verifyToken, verifyAdmin, async (req, res) => {
+router.post('/:id/rejeitar', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { motivo_rejeicao } = req.body;
@@ -493,7 +493,7 @@ router.post('/:id/rejeitar', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // POST /api/admin/reembolsos/:id/marcar-pago - Marcar como pago
-router.post('/:id/marcar-pago', verifyToken, verifyAdmin, async (req, res) => {
+router.post('/:id/marcar-pago', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { observacoes } = req.body;
@@ -549,7 +549,7 @@ router.post('/:id/marcar-pago', verifyToken, verifyAdmin, async (req, res) => {
 // ========================================
 
 // POST /api/admin/reembolsos/:id/upload - Upload de comprovantes
-router.post('/:id/upload', verifyToken, verifyAdmin, upload.fields([
+router.post('/:id/upload', verificarToken, verificarNivel('admin'), upload.fields([
     { name: 'comprovante_nf', maxCount: 1 },
     { name: 'comprovante_recibo', maxCount: 1 },
     { name: 'comprovante_pagamento', maxCount: 1 }
@@ -613,7 +613,7 @@ router.post('/:id/upload', verifyToken, verifyAdmin, upload.fields([
 });
 
 // GET /api/admin/reembolsos/:id/arquivo/:tipo - Download de arquivo
-router.get('/:id/arquivo/:tipo', verifyToken, verifyAdmin, async (req, res) => {
+router.get('/:id/arquivo/:tipo', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id, tipo } = req.params;
 
@@ -646,7 +646,7 @@ router.get('/:id/arquivo/:tipo', verifyToken, verifyAdmin, async (req, res) => {
 // ========================================
 
 // GET /api/admin/reembolsos/exportar/csv - Exportar para CSV
-router.get('/exportar/csv', verifyToken, verifyAdmin, async (req, res) => {
+router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { status, mes_referencia, distribuidor_id } = req.query;
 
@@ -670,7 +670,7 @@ router.get('/exportar/csv', verifyToken, verifyAdmin, async (req, res) => {
             FROM reembolsos r
             LEFT JOIN distribuidores d ON r.distribuidor_id = d.id
             LEFT JOIN colaboradores c ON r.colaborador_id = c.id
-            LEFT JOIN vales v ON r.vale_id = v.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
             LEFT JOIN usuarios_admin aprovador ON r.aprovado_por = aprovador.id
             LEFT JOIN usuarios_admin pagador ON r.pago_por = pagador.id
             WHERE 1=1
@@ -729,7 +729,7 @@ router.get('/exportar/csv', verifyToken, verifyAdmin, async (req, res) => {
 });
 
 // DELETE /api/admin/reembolsos/:id - Deletar reembolso (apenas a_validar ou rejeitado)
-router.delete('/:id', verifyToken, verifyAdmin, async (req, res) => {
+router.delete('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
 
