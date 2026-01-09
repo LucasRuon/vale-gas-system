@@ -84,11 +84,11 @@ router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
         let sql = `
             SELECT
                 r.*,
-                d.razao_social as distribuidor_nome,
+                d.nome as distribuidor_nome,
                 d.cnpj as distribuidor_cnpj,
                 c.nome as colaborador_nome,
                 c.cpf as colaborador_cpf,
-                v.codigo_vale,
+                v.codigo as codigo_vale,
                 aprovador.nome as aprovado_por_nome,
                 pagador.nome as pago_por_nome
             FROM reembolsos r
@@ -204,13 +204,13 @@ router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => 
         const reembolso = await getQuery(`
             SELECT
                 r.*,
-                d.razao_social as distribuidor_nome,
+                d.nome as distribuidor_nome,
                 d.cnpj as distribuidor_cnpj,
                 d.email as distribuidor_email,
                 d.telefone as distribuidor_telefone,
                 c.nome as colaborador_nome,
                 c.cpf as colaborador_cpf,
-                v.codigo_vale,
+                v.codigo,
                 v.mes_referencia as vale_mes,
                 aprovador.nome as aprovado_por_nome,
                 pagador.nome as pago_por_nome,
@@ -656,8 +656,8 @@ router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req,
                 r.mes_referencia,
                 r.valor,
                 r.status,
-                v.codigo_vale,
-                d.razao_social as distribuidor,
+                v.codigo,
+                d.nome as distribuidor,
                 d.cnpj,
                 c.nome as colaborador,
                 c.cpf,

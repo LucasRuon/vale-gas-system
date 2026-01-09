@@ -597,16 +597,16 @@ async function criarReembolsoManual(e) {
 // Carregar distribuidores para filtro
 async function carregarDistribuidoresFiltro() {
     try {
-        const response = await fetch('/api/admin/distribuidores/listar', {
+        const response = await fetch('/api/admin/distribuidores?ativo=true&limite=1000', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
 
-        if (data.success) {
+        if (data.sucesso) {
             const select = document.getElementById('filtro-distribuidor-reembolso');
             select.innerHTML = '<option value="">Todos</option>' +
-                data.distribuidores.map(d =>
-                    `<option value="${d.id}">${d.razao_social}</option>`
+                data.dados.map(d =>
+                    `<option value="${d.id}">${d.nome || d.razao_social}</option>`
                 ).join('');
         }
     } catch (error) {
