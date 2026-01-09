@@ -365,7 +365,7 @@ const getConfigValue = async (chave, valorPadrao) => {
 cron.schedule('0 2 * * *', () => {
     logger.logInfo('Iniciando backup automático do banco de dados...');
 
-    exec('bash scripts/backup.sh', (error, stdout, stderr) => {
+    exec('node scripts/backup-database.js create', (error, stdout, stderr) => {
         if (error) {
             logger.logError('Erro no backup automático', error);
             return;
