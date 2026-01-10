@@ -235,12 +235,12 @@ router.post('/confirmar-retirada', async (req, res) => {
 
         if (configReembolsoAuto && configReembolsoAuto.valor === 'true') {
             // Verificar se é distribuidor externo (apenas externos recebem reembolso)
-            const distribuidor = await getQuery(
+            const distribuidorTipo = await getQuery(
                 'SELECT tipo_distribuidor FROM distribuidores WHERE id = ?',
                 [req.usuario.id]
             );
 
-            const isExterno = !distribuidor || !distribuidor.tipo_distribuidor || distribuidor.tipo_distribuidor === 'externo';
+            const isExterno = !distribuidorTipo || !distribuidorTipo.tipo_distribuidor || distribuidorTipo.tipo_distribuidor === 'externo';
 
             if (isExterno) {
                 // Buscar valor padrão de reembolso
