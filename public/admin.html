@@ -936,6 +936,8 @@
 <script>
 const API='/api';
 let token=localStorage.getItem('token'),user=JSON.parse(localStorage.getItem('usuario')||'{}');
+// Expor token globalmente para scripts externos (reembolsos-script.js)
+window.token = token;
 if(!token||user.tipo!=='admin')location.href='login-admin.html';
 document.getElementById('userName').textContent=user.nome+' ('+user.nivel+')';
 
