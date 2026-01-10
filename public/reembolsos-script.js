@@ -2,6 +2,13 @@
 // GESTÃO DE REEMBOLSOS
 // ========================================
 
+// Obter token do escopo global ou localStorage
+const token = window.token || localStorage.getItem('token');
+
+if (!token) {
+    console.error('❌ Token não encontrado! Reembolsos não funcionarão.');
+}
+
 let reembolsoAtual = null;
 let paginaAtualReembolsos = 1;
 
