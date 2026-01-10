@@ -4,6 +4,7 @@ const { getQuery, allQuery, runQuery } = require('../database');
 const { autenticarDistribuidor } = require('../auth');
 const { getMesReferencia, formatarCPF } = require('../utils');
 const { notificarValeRetirado } = require('../webhooks');
+const logger = require('../config/logger');
 
 // Aplicar autenticação em todas as rotas
 router.use(autenticarDistribuidor);
