@@ -452,7 +452,7 @@ router.delete('/colaboradores/:id', verificarNivel('admin'), async (req, res) =>
 // Listar todos os distribuidores
 router.get('/distribuidores', async (req, res) => {
     try {
-        const { ativo, busca, pagina = 1, limite = 20 } = req.query;
+        const { ativo, busca, tipo, pagina = 1, limite = 20 } = req.query;
         const offset = (pagina - 1) * limite;
 
         let sql = 'SELECT * FROM distribuidores WHERE 1=1';
@@ -462,6 +462,12 @@ router.get('/distribuidores', async (req, res) => {
         if (ativo === 'true' || ativo === 'false') {
             sql += ' AND ativo = ?';
             params.push(ativo === 'true' ? 1 : 0);
+        }
+
+        // Filtrar por tipo (interno ou externo)
+        if (tipo === 'externo' || tipo === 'interno') {
+            sql += ' AND tipo_distribuidor = ?';
+            params.push(tipo);
         }
 
         if (busca) {
@@ -534,7 +540,7 @@ router.post('/distribuidores', async (req, res) => {
         const {
             nome, cnpj, email, telefone, responsavel,
             cep, logradouro, numero, complemento, bairro, cidade, estado,
-            horario_funcionamento
+            horario_funcionamento, tipo_distribuidor
         } = req.body;
 
         // Validações
@@ -582,11 +588,12 @@ router.post('/distribuidores', async (req, res) => {
         const senhaHash = await hashSenha(senhaTemporaria);
 
         // Inserir distribuidor
+        const tipoDistribuidor = tipo_distribuidor === 'interno' ? 'interno' : 'externo';
         const result = await runQuery(
-            `INSERT INTO distribuidores 
-            (nome, cnpj, email, senha, telefone, responsavel, cep, logradouro, numero, complemento, bairro, cidade, estado, latitude, longitude, horario_funcionamento) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [nome, cnpjLimpo, email, senhaHash, telefone, responsavel, cep, logradouro, numero, complemento || '', bairro, cidade, estado, latitude, longitude, horario_funcionamento || '']
+            `INSERT INTO distribuidores
+            (nome, cnpj, email, senha, telefone, responsavel, cep, logradouro, numero, complemento, bairro, cidade, estado, latitude, longitude, horario_funcionamento, tipo_distribuidor)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [nome, cnpjLimpo, email, senhaHash, telefone, responsavel, cep, logradouro, numero, complemento || '', bairro, cidade, estado, latitude, longitude, horario_funcionamento || '', tipoDistribuidor]
         );
 
         // Enviar webhook
@@ -617,7 +624,7 @@ router.put('/distribuidores/:id', async (req, res) => {
         const {
             nome, email, telefone, responsavel,
             cep, logradouro, numero, complemento, bairro, cidade, estado,
-            horario_funcionamento, ativo
+            horario_funcionamento, ativo, tipo_distribuidor
         } = req.body;
 
         const distribuidor = await getQuery('SELECT id FROM distribuidores WHERE id = ?', [id]);
@@ -639,7 +646,7 @@ router.put('/distribuidores/:id', async (req, res) => {
         // Montar query dinâmica com whitelist de campos permitidos
         const camposPermitidos = {
             nome, email, telefone, responsavel, cep, logradouro, numero,
-            complemento, bairro, cidade, estado, horario_funcionamento, ativo
+            complemento, bairro, cidade, estado, horario_funcionamento, ativo, tipo_distribuidor
         };
 
         const campos = [];
@@ -659,6 +666,10 @@ router.put('/distribuidores/:id', async (req, res) => {
         if (estado !== undefined) { campos.push('estado = ?'); valores.push(estado); }
         if (horario_funcionamento !== undefined) { campos.push('horario_funcionamento = ?'); valores.push(horario_funcionamento); }
         if (ativo !== undefined) { campos.push('ativo = ?'); valores.push(ativo ? 1 : 0); }
+        if (tipo_distribuidor !== undefined && (tipo_distribuidor === 'interno' || tipo_distribuidor === 'externo')) {
+            campos.push('tipo_distribuidor = ?');
+            valores.push(tipo_distribuidor);
+        }
 
         // Atualizar coordenadas se endereço foi alterado
         if (logradouro || numero || cidade || estado) {
