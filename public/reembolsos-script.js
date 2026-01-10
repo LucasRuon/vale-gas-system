@@ -95,6 +95,14 @@ async function carregarReembolsos(page = 1) {
         const response = await fetch(`/api/admin/reembolsos?${params}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        // Verificar se a resposta é OK antes de parsear JSON
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro HTTP:', response.status, errorText);
+            throw new Error(`Erro do servidor (${response.status})`);
+        }
+
         const data = await response.json();
 
         if (!data.success) {
@@ -623,21 +631,32 @@ async function carregarDistribuidoresExternos() {
         const response = await fetch('/api/admin/distribuidores?ativo=true&tipo=externo&limite=1000', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+
         const data = await response.json();
 
         const select = document.getElementById('novo-reembolso-distribuidor');
         select.innerHTML = '<option value="">Selecione um distribuidor...</option>';
 
+        // API retorna { sucesso, dados } para distribuidores
         if (data.sucesso && data.dados && data.dados.length > 0) {
             data.dados.forEach(d => {
                 select.innerHTML += `<option value="${d.id}">${d.nome || d.razao_social} - ${d.cnpj}</option>`;
             });
+        } else if (!data.sucesso) {
+            console.error('Erro da API:', data.erro);
+            select.innerHTML += '<option value="" disabled>Erro ao carregar distribuidores</option>';
         } else {
             select.innerHTML += '<option value="" disabled>Nenhum distribuidor externo cadastrado</option>';
         }
     } catch (error) {
         console.error('Erro ao carregar distribuidores:', error);
-        mostrarToast('Erro ao carregar distribuidores', 'error');
+        const select = document.getElementById('novo-reembolso-distribuidor');
+        select.innerHTML = '<option value="">Selecione um distribuidor...</option>';
+        select.innerHTML += '<option value="" disabled>Erro ao carregar - tente novamente</option>';
     }
 }
 
@@ -660,6 +679,13 @@ async function carregarValesPendentes() {
         const response = await fetch(`/api/admin/reembolsos/vales-pendentes/${distribuidorId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro HTTP vales-pendentes:', response.status, errorText);
+            throw new Error(`Erro do servidor (${response.status})`);
+        }
+
         const data = await response.json();
 
         if (!data.success) {
