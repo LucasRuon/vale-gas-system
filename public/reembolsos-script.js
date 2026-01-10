@@ -19,6 +19,34 @@ function mostrarToast(mensagem, tipo = 'info') {
     }
 }
 
+// Função para abrir modal (adiciona classe 'show')
+function abrirModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('show');
+    }
+}
+
+// Função para fechar modal (remove classe 'show')
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// Função para formatar mês de referência (YYYY-MM para Mês/Ano)
+function formatarMesReferencia(mesRef) {
+    if (!mesRef) return '-';
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const partes = mesRef.split('-');
+    if (partes.length !== 2) return mesRef;
+    const ano = partes[0];
+    const mes = parseInt(partes[1]) - 1;
+    if (mes < 0 || mes > 11) return mesRef;
+    return `${meses[mes]}/${ano}`;
+}
+
 // Carregar estatísticas de reembolsos
 async function carregarEstatisticasReembolsos() {
     try {
@@ -566,68 +594,237 @@ function limparFiltrosReembolsos() {
     carregarReembolsos(1);
 }
 
+// Variáveis para controle de vales selecionados
+let valesPendentesLista = [];
+let valesSelecionados = new Set();
+
 // Abrir modal novo reembolso
-function abrirModalNovoReembolso() {
-    document.getElementById('novo-vale-codigo').value = '';
-    document.getElementById('novo-reembolso-dados').style.display = 'none';
+async function abrirModalNovoReembolso() {
+    // Resetar estado
+    valesPendentesLista = [];
+    valesSelecionados.clear();
+
+    document.getElementById('novo-reembolso-distribuidor').value = '';
+    document.getElementById('vales-pendentes-container').style.display = 'none';
+    document.getElementById('novo-reembolso-obs').style.display = 'none';
+    document.getElementById('resumo-selecao').style.display = 'none';
+    document.getElementById('btn-criar-reembolsos').disabled = true;
+    document.getElementById('novo-observacoes').value = '';
+
+    // Carregar distribuidores externos
+    await carregarDistribuidoresExternos();
+
     abrirModal('modalNovoReembolso');
 }
 
-// Criar reembolso manual
-async function criarReembolsoManual(e) {
-    e.preventDefault();
-
+// Carregar distribuidores externos (que recebem reembolso)
+async function carregarDistribuidoresExternos() {
     try {
-        const codigoVale = document.getElementById('novo-vale-codigo').value;
-        const valor = document.getElementById('novo-valor').value;
-        const observacoes = document.getElementById('novo-observacoes').value;
-
-        // Buscar vale pelo código
-        const valeResponse = await fetch(`/api/admin/vales?search=${codigoVale}`, {
+        const response = await fetch('/api/admin/distribuidores?ativo=true&tipo=externo&limite=1000', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const valeData = await valeResponse.json();
+        const data = await response.json();
 
-        if (!valeData.success || !valeData.vales || valeData.vales.length === 0) {
-            throw new Error('Vale não encontrado');
+        const select = document.getElementById('novo-reembolso-distribuidor');
+        select.innerHTML = '<option value="">Selecione um distribuidor...</option>';
+
+        if (data.sucesso && data.dados && data.dados.length > 0) {
+            data.dados.forEach(d => {
+                select.innerHTML += `<option value="${d.id}">${d.nome || d.razao_social} - ${d.cnpj}</option>`;
+            });
+        } else {
+            select.innerHTML += '<option value="" disabled>Nenhum distribuidor externo cadastrado</option>';
         }
+    } catch (error) {
+        console.error('Erro ao carregar distribuidores:', error);
+        mostrarToast('Erro ao carregar distribuidores', 'error');
+    }
+}
 
-        const vale = valeData.vales[0];
+// Carregar vales pendentes de reembolso para o distribuidor selecionado
+async function carregarValesPendentes() {
+    const distribuidorId = document.getElementById('novo-reembolso-distribuidor').value;
+    const container = document.getElementById('vales-pendentes-container');
+    const tbody = document.getElementById('lista-vales-pendentes');
 
-        if (vale.status !== 'utilizado') {
-            throw new Error('Apenas vales utilizados podem gerar reembolso');
-        }
+    if (!distribuidorId) {
+        container.style.display = 'none';
+        return;
+    }
 
-        // Criar reembolso
-        const response = await fetch('/api/admin/reembolsos', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                vale_id: vale.id,
-                distribuidor_id: vale.distribuidor_id,
-                colaborador_id: vale.colaborador_id,
-                valor: parseFloat(valor),
-                mes_referencia: vale.mes_referencia,
-                observacoes
-            })
+    container.style.display = 'block';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px"><div class="spinner" style="margin:10px auto"></div>Carregando...</td></tr>';
+
+    try {
+        // Buscar vales utilizados deste distribuidor que ainda não têm reembolso
+        const response = await fetch(`/api/admin/reembolsos/vales-pendentes/${distribuidorId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-
         const data = await response.json();
 
         if (!data.success) {
-            throw new Error(data.error || 'Erro ao criar reembolso');
+            throw new Error(data.error || 'Erro ao carregar vales');
         }
 
-        mostrarToast('Reembolso criado com sucesso!', 'success');
-        fecharModal('modalNovoReembolso');
-        carregarReembolsos(1);
+        valesPendentesLista = data.vales || [];
+        valesSelecionados.clear();
+
+        if (valesPendentesLista.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-secondary)">Nenhum vale pendente de reembolso para este distribuidor</td></tr>';
+            document.getElementById('novo-reembolso-obs').style.display = 'none';
+            document.getElementById('resumo-selecao').style.display = 'none';
+            return;
+        }
+
+        // Renderizar lista de vales
+        tbody.innerHTML = valesPendentesLista.map(v => `
+            <tr>
+                <td>
+                    <input type="checkbox" class="vale-checkbox" data-vale-id="${v.id}" data-valor="${v.valor || 0}" onchange="toggleVale(${v.id}, ${v.valor || 0})">
+                </td>
+                <td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px">${v.codigo}</code></td>
+                <td>
+                    <strong>${v.colaborador_nome || '-'}</strong><br>
+                    <small style="color:var(--text-secondary)">${v.colaborador_cpf || '-'}</small>
+                </td>
+                <td>${formatarMesReferencia(v.mes_referencia)}</td>
+                <td>${v.data_validacao ? new Date(v.data_validacao).toLocaleDateString('pt-BR') : '-'}</td>
+                <td style="font-weight:600;color:var(--success)">R$ ${(parseFloat(v.valor) || 0).toFixed(2).replace('.', ',')}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('selecionar-todos-vales').checked = false;
+        document.getElementById('novo-reembolso-obs').style.display = 'block';
+        atualizarResumoSelecao();
 
     } catch (error) {
-        console.error('Erro ao criar reembolso:', error);
+        console.error('Erro ao carregar vales:', error);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--danger)">${error.message}</td></tr>`;
+    }
+}
+
+// Toggle seleção de um vale
+function toggleVale(valeId, valor) {
+    if (valesSelecionados.has(valeId)) {
+        valesSelecionados.delete(valeId);
+    } else {
+        valesSelecionados.add(valeId);
+    }
+    atualizarResumoSelecao();
+}
+
+// Toggle selecionar todos os vales
+function toggleSelecionarTodosVales() {
+    const checked = document.getElementById('selecionar-todos-vales').checked;
+    const checkboxes = document.querySelectorAll('.vale-checkbox');
+
+    valesSelecionados.clear();
+
+    checkboxes.forEach(cb => {
+        cb.checked = checked;
+        if (checked) {
+            valesSelecionados.add(parseInt(cb.dataset.valeId));
+        }
+    });
+
+    atualizarResumoSelecao();
+}
+
+// Atualizar resumo da seleção
+function atualizarResumoSelecao() {
+    const resumo = document.getElementById('resumo-selecao');
+    const btnCriar = document.getElementById('btn-criar-reembolsos');
+
+    if (valesSelecionados.size === 0) {
+        resumo.style.display = 'none';
+        btnCriar.disabled = true;
+        return;
+    }
+
+    // Calcular total
+    let total = 0;
+    valesPendentesLista.forEach(v => {
+        if (valesSelecionados.has(v.id)) {
+            total += parseFloat(v.valor) || 0;
+        }
+    });
+
+    document.getElementById('qtd-vales-selecionados').textContent = valesSelecionados.size;
+    document.getElementById('total-reembolso').textContent = total.toFixed(2).replace('.', ',');
+
+    resumo.style.display = 'block';
+    btnCriar.disabled = false;
+}
+
+// Criar reembolsos para os vales selecionados
+async function criarReembolsosSelecionados() {
+    if (valesSelecionados.size === 0) {
+        mostrarToast('Selecione pelo menos um vale', 'error');
+        return;
+    }
+
+    const distribuidorId = document.getElementById('novo-reembolso-distribuidor').value;
+    const observacoes = document.getElementById('novo-observacoes').value;
+    const btnCriar = document.getElementById('btn-criar-reembolsos');
+
+    btnCriar.disabled = true;
+    btnCriar.innerHTML = '<div class="spinner" style="width:16px;height:16px;margin-right:8px"></div>Criando...';
+
+    try {
+        // Criar reembolsos para cada vale selecionado
+        const valesParaCriar = valesPendentesLista.filter(v => valesSelecionados.has(v.id));
+        let criados = 0;
+        let erros = [];
+
+        for (const vale of valesParaCriar) {
+            try {
+                const response = await fetch('/api/admin/reembolsos', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vale_id: vale.id,
+                        distribuidor_id: parseInt(distribuidorId),
+                        colaborador_id: vale.colaborador_id,
+                        valor: parseFloat(vale.valor) || 0,
+                        mes_referencia: vale.mes_referencia,
+                        observacoes
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    criados++;
+                } else {
+                    erros.push(`Vale ${vale.codigo}: ${data.error}`);
+                }
+            } catch (e) {
+                erros.push(`Vale ${vale.codigo}: ${e.message}`);
+            }
+        }
+
+        if (criados > 0) {
+            mostrarToast(`${criados} reembolso(s) criado(s) com sucesso!`, 'success');
+            fecharModal('modalNovoReembolso');
+            carregarReembolsos(1);
+        }
+
+        if (erros.length > 0) {
+            console.error('Erros ao criar reembolsos:', erros);
+            if (criados === 0) {
+                mostrarToast('Erro ao criar reembolsos. Verifique o console.', 'error');
+            }
+        }
+
+    } catch (error) {
+        console.error('Erro ao criar reembolsos:', error);
         mostrarToast(error.message, 'error');
+    } finally {
+        btnCriar.disabled = false;
+        btnCriar.innerHTML = 'Criar Reembolso(s)';
     }
 }
 
@@ -658,19 +855,24 @@ window.carregarDistribuidoresFiltro = carregarDistribuidoresFiltro;
 window.exportarReembolsosCSV = exportarReembolsosCSV;
 window.limparFiltrosReembolsos = limparFiltrosReembolsos;
 window.abrirModalNovoReembolso = abrirModalNovoReembolso;
-window.abrirModalDetalhes = abrirModalDetalhes;
+window.verDetalhesReembolso = verDetalhesReembolso;
 window.abrirModalAprovar = abrirModalAprovar;
 window.abrirModalRejeitar = abrirModalRejeitar;
 window.abrirModalMarcarPago = abrirModalMarcarPago;
 window.abrirModalUpload = abrirModalUpload;
+window.abrirModal = abrirModal;
 window.fecharModal = fecharModal;
 window.confirmarAprovacao = confirmarAprovacao;
 window.confirmarRejeicao = confirmarRejeicao;
 window.confirmarPagamento = confirmarPagamento;
 window.enviarComprovantes = enviarComprovantes;
-window.criarReembolsoManual = criarReembolsoManual;
-window.buscarValePorCodigo = buscarValePorCodigo;
-window.baixarArquivo = baixarArquivo;
-window.confirmarDelecao = confirmarDelecao;
+window.baixarComprovante = baixarComprovante;
+window.formatarMesReferencia = formatarMesReferencia;
+// Novas funções para o modal de novo reembolso
+window.carregarDistribuidoresExternos = carregarDistribuidoresExternos;
+window.carregarValesPendentes = carregarValesPendentes;
+window.toggleVale = toggleVale;
+window.toggleSelecionarTodosVales = toggleSelecionarTodosVales;
+window.criarReembolsosSelecionados = criarReembolsosSelecionados;
 
 console.log('✅ Funções de reembolsos expostas globalmente');

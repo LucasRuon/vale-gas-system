@@ -135,7 +135,6 @@
         </div>
         <div id="paginacaoReembolsos" class="pagination" style="padding:16px"></div>
     </div>
-</div>
 
 <!-- MODAL DETALHES REEMBOLSO -->
 <div id="modalDetalhesReembolso" class="modal">
@@ -364,40 +363,69 @@
     </div>
 </div>
 
-<!-- MODAL NOVO REEMBOLSO MANUAL -->
+<!-- MODAL NOVO REEMBOLSO -->
 <div id="modalNovoReembolso" class="modal">
-    <div class="modal-content" style="max-width:700px">
+    <div class="modal-content" style="max-width:900px">
         <div class="modal-header">
-            <h2>Criar Reembolso Manualmente</h2>
+            <h2>Criar Reembolso</h2>
             <button class="modal-close" onclick="fecharModal('modalNovoReembolso')">&times;</button>
         </div>
-        <form onsubmit="criarReembolsoManual(event)">
-            <div class="modal-body">
-                <div class="alert alert-info">
-                    Use este formulário para criar um reembolso manualmente para vales já validados.
-                </div>
+        <div class="modal-body">
+            <div class="alert alert-info">
+                Selecione um distribuidor externo para ver os vales validados pendentes de reembolso.
+            </div>
 
+            <!-- Passo 1: Selecionar Distribuidor -->
+            <div class="form-group">
+                <label>Distribuidor Externo *</label>
+                <select id="novo-reembolso-distribuidor" class="form-control" onchange="carregarValesPendentes()">
+                    <option value="">Selecione um distribuidor...</option>
+                </select>
+            </div>
+
+            <!-- Passo 2: Lista de Vales Pendentes -->
+            <div id="vales-pendentes-container" style="display:none; margin-top:20px">
+                <h4 style="margin-bottom:12px">Vales Validados Pendentes de Reembolso</h4>
+                <div class="table-responsive" style="max-height:300px; overflow-y:auto">
+                    <table class="table" style="font-size:13px">
+                        <thead style="position:sticky; top:0; background:var(--bg-card)">
+                            <tr>
+                                <th style="width:40px">
+                                    <input type="checkbox" id="selecionar-todos-vales" onchange="toggleSelecionarTodosVales()">
+                                </th>
+                                <th>Código</th>
+                                <th>Colaborador</th>
+                                <th>Mês Ref.</th>
+                                <th>Data Validação</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-vales-pendentes">
+                            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-secondary)">Selecione um distribuidor</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="resumo-selecao" style="margin-top:16px; padding:12px; background:var(--gray-50); border-radius:8px; display:none">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <span><strong id="qtd-vales-selecionados">0</strong> vale(s) selecionado(s)</span>
+                        <span style="font-size:18px; font-weight:600; color:var(--success)">Total: R$ <span id="total-reembolso">0,00</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passo 3: Observações -->
+            <div id="novo-reembolso-obs" style="display:none; margin-top:20px">
                 <div class="form-group">
-                    <label>Vale (Código) *</label>
-                    <input type="text" id="novo-vale-codigo" class="form-control" placeholder="Digite o código do vale" required>
-                    <small>Buscar vale validado pelo código</small>
-                </div>
-
-                <div id="novo-reembolso-dados" style="display:none">
-                    <div class="form-group">
-                        <label>Valor do Reembolso (R$) *</label>
-                        <input type="number" id="novo-valor" class="form-control" step="0.01" min="0" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Observações</label>
-                        <textarea id="novo-observacoes" class="form-control" rows="3"></textarea>
-                    </div>
+                    <label>Observações (opcional)</label>
+                    <textarea id="novo-observacoes" class="form-control" rows="2" placeholder="Observações sobre o(s) reembolso(s)..."></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="fecharModal('modalNovoReembolso')">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Criar Reembolso</button>
-            </div>
-        </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal('modalNovoReembolso')">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btn-criar-reembolsos" onclick="criarReembolsosSelecionados()" disabled>
+                Criar Reembolso(s)
+            </button>
+        </div>
     </div>
+</div>

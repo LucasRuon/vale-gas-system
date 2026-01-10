@@ -197,6 +197,141 @@ router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
     }
 });
 
+// ========================================
+// ROTAS DE EXPORTAÇÃO (ANTES das rotas com :id)
+// ========================================
+
+// GET /api/admin/reembolsos/exportar/csv - Exportar para CSV
+router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req, res) => {
+    try {
+        const { status, mes_referencia, distribuidor_id } = req.query;
+
+        let sql = `
+            SELECT
+                r.id,
+                r.mes_referencia,
+                r.valor,
+                r.status,
+                v.codigo as codigo_vale,
+                d.nome as distribuidor,
+                d.cnpj,
+                c.nome as colaborador,
+                c.cpf,
+                r.data_validacao,
+                r.data_aprovacao,
+                r.data_pagamento,
+                aprovador.nome as aprovado_por,
+                pagador.nome as pago_por,
+                r.observacoes
+            FROM reembolsos r
+            LEFT JOIN distribuidores d ON r.distribuidor_id = d.id
+            LEFT JOIN colaboradores c ON r.colaborador_id = c.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
+            LEFT JOIN usuarios_admin aprovador ON r.aprovado_por = aprovador.id
+            LEFT JOIN usuarios_admin pagador ON r.pago_por = pagador.id
+            WHERE 1=1
+        `;
+
+        const params = [];
+        if (status) {
+            sql += ' AND r.status = ?';
+            params.push(status);
+        }
+        if (mes_referencia) {
+            sql += ' AND r.mes_referencia = ?';
+            params.push(mes_referencia);
+        }
+        if (distribuidor_id) {
+            sql += ' AND r.distribuidor_id = ?';
+            params.push(distribuidor_id);
+        }
+
+        sql += ' ORDER BY r.criado_em DESC';
+
+        const reembolsos = await allQuery(sql, params);
+
+        // Gerar CSV
+        const csv_header = 'ID,Mês Ref,Valor,Status,Código Vale,Distribuidor,CNPJ,Colaborador,CPF,Data Validação,Data Aprovação,Data Pagamento,Aprovado Por,Pago Por,Observações\n';
+        const csv_rows = reembolsos.map(r => {
+            return [
+                r.id,
+                r.mes_referencia,
+                r.valor,
+                r.status,
+                r.codigo_vale || '',
+                `"${r.distribuidor || ''}"`,
+                r.cnpj || '',
+                `"${r.colaborador || ''}"`,
+                r.cpf || '',
+                r.data_validacao || '',
+                r.data_aprovacao || '',
+                r.data_pagamento || '',
+                r.aprovado_por || '',
+                r.pago_por || '',
+                `"${(r.observacoes || '').replace(/"/g, '""')}"`
+            ].join(',');
+        }).join('\n');
+
+        const csv = csv_header + csv_rows;
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=reembolsos_${Date.now()}.csv`);
+        res.send('\uFEFF' + csv); // BOM para UTF-8
+
+    } catch (error) {
+        logger.logError('Erro ao exportar CSV', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// GET /api/admin/reembolsos/vales-pendentes/:distribuidorId - Listar vales utilizados sem reembolso
+router.get('/vales-pendentes/:distribuidorId', verificarToken, verificarNivel('admin'), async (req, res) => {
+    try {
+        const { distribuidorId } = req.params;
+
+        // Buscar valor padrão de reembolso das configurações
+        const configValor = await getQuery("SELECT valor FROM configuracoes WHERE chave = 'valor_reembolso_padrao'");
+        const valorPadrao = configValor ? parseFloat(configValor.valor) : 100.00;
+
+        // Buscar vales utilizados por este distribuidor que ainda não têm reembolso
+        const vales = await allQuery(`
+            SELECT
+                v.id,
+                v.codigo,
+                v.mes_referencia,
+                v.data_retirada as data_validacao,
+                v.colaborador_id,
+                c.nome as colaborador_nome,
+                c.cpf as colaborador_cpf,
+                hr.distribuidor_nome
+            FROM vales_gas v
+            JOIN colaboradores c ON v.colaborador_id = c.id
+            LEFT JOIN historico_retiradas hr ON hr.vale_id = v.id
+            WHERE v.status = 'utilizado'
+            AND v.distribuidor_id = ?
+            AND v.id NOT IN (SELECT vale_id FROM reembolsos WHERE vale_id IS NOT NULL)
+            ORDER BY v.data_retirada DESC
+        `, [distribuidorId]);
+
+        // Adicionar valor padrão a cada vale
+        const valesComValor = vales.map(v => ({
+            ...v,
+            valor: valorPadrao
+        }));
+
+        res.json({
+            success: true,
+            vales: valesComValor,
+            total: vales.length,
+            valor_padrao: valorPadrao
+        });
+
+    } catch (error) {
+        logger.logError('Erro ao listar vales pendentes', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // GET /api/admin/reembolsos/:id - Detalhes de um reembolso
 router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
     try {
@@ -638,93 +773,6 @@ router.get('/:id/arquivo/:tipo', verificarToken, verificarNivel('admin'), async 
 
     } catch (error) {
         logger.logError('Erro ao baixar arquivo', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// ========================================
-// ROTAS DE EXPORTAÇÃO
-// ========================================
-
-// GET /api/admin/reembolsos/exportar/csv - Exportar para CSV
-router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req, res) => {
-    try {
-        const { status, mes_referencia, distribuidor_id } = req.query;
-
-        let sql = `
-            SELECT
-                r.id,
-                r.mes_referencia,
-                r.valor,
-                r.status,
-                v.codigo,
-                d.nome as distribuidor,
-                d.cnpj,
-                c.nome as colaborador,
-                c.cpf,
-                r.data_validacao,
-                r.data_aprovacao,
-                r.data_pagamento,
-                aprovador.nome as aprovado_por,
-                pagador.nome as pago_por,
-                r.observacoes
-            FROM reembolsos r
-            LEFT JOIN distribuidores d ON r.distribuidor_id = d.id
-            LEFT JOIN colaboradores c ON r.colaborador_id = c.id
-            LEFT JOIN vales_gas v ON r.vale_id = v.id
-            LEFT JOIN usuarios_admin aprovador ON r.aprovado_por = aprovador.id
-            LEFT JOIN usuarios_admin pagador ON r.pago_por = pagador.id
-            WHERE 1=1
-        `;
-
-        const params = [];
-        if (status) {
-            sql += ' AND r.status = ?';
-            params.push(status);
-        }
-        if (mes_referencia) {
-            sql += ' AND r.mes_referencia = ?';
-            params.push(mes_referencia);
-        }
-        if (distribuidor_id) {
-            sql += ' AND r.distribuidor_id = ?';
-            params.push(distribuidor_id);
-        }
-
-        sql += ' ORDER BY r.criado_em DESC';
-
-        const reembolsos = await allQuery(sql, params);
-
-        // Gerar CSV
-        const csv_header = 'ID,Mês Ref,Valor,Status,Código Vale,Distribuidor,CNPJ,Colaborador,CPF,Data Validação,Data Aprovação,Data Pagamento,Aprovado Por,Pago Por,Observações\n';
-        const csv_rows = reembolsos.map(r => {
-            return [
-                r.id,
-                r.mes_referencia,
-                r.valor,
-                r.status,
-                r.codigo_vale,
-                `"${r.distribuidor}"`,
-                r.cnpj,
-                `"${r.colaborador}"`,
-                r.cpf,
-                r.data_validacao || '',
-                r.data_aprovacao || '',
-                r.data_pagamento || '',
-                r.aprovado_por || '',
-                r.pago_por || '',
-                `"${r.observacoes || ''}"`
-            ].join(',');
-        }).join('\n');
-
-        const csv = csv_header + csv_rows;
-
-        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename=reembolsos_${Date.now()}.csv`);
-        res.send('\uFEFF' + csv); // BOM para UTF-8
-
-    } catch (error) {
-        logger.logError('Erro ao exportar CSV', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
