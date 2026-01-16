@@ -124,4 +124,115 @@ logger.logPerformance = (operacao, duracao, detalhes = {}) => {
     });
 };
 
+// Log de requisição HTTP detalhado
+logger.logRequest = (req, res, duracao) => {
+    const logData = {
+        tipo: 'HTTP_REQUEST',
+        metodo: req.method,
+        url: req.originalUrl,
+        status: res.statusCode,
+        duracao_ms: duracao,
+        ip: req.ip || req.connection?.remoteAddress,
+        user_agent: req.headers['user-agent'],
+        usuario_id: req.usuario?.id || null,
+        usuario_tipo: req.usuario?.tipo || null,
+        content_type: req.headers['content-type'],
+        response_size: res.get('Content-Length') || null
+    };
+
+    // Determinar nível de log baseado no status
+    if (res.statusCode >= 500) {
+        logger.error('REQUISIÇÃO COM ERRO', logData);
+    } else if (res.statusCode >= 400) {
+        logger.warn('REQUISIÇÃO REJEITADA', logData);
+    } else if (duracao > 2000) {
+        logger.warn('REQUISIÇÃO LENTA', logData);
+    } else {
+        logger.info('REQUISIÇÃO', logData);
+    }
+};
+
+// Log de operação de banco de dados
+logger.logDatabase = (operacao, tabela, detalhes = {}) => {
+    logger.info('DATABASE', {
+        operacao, // INSERT, UPDATE, DELETE, SELECT
+        tabela,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de autenticação
+logger.logAuth = (evento, detalhes = {}) => {
+    const nivel = ['LOGIN_SUCESSO', 'LOGOUT'].includes(evento) ? 'info' : 'warn';
+    logger[nivel]('AUTENTICAÇÃO', {
+        evento,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de webhook/notificação
+logger.logWebhook = (tipo, destino, sucesso, detalhes = {}) => {
+    const nivel = sucesso ? 'info' : 'warn';
+    logger[nivel]('WEBHOOK', {
+        tipo, // email, whatsapp, etc
+        destino,
+        sucesso,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de cache
+logger.logCache = (operacao, chave, hit = null) => {
+    logger.debug('CACHE', {
+        operacao, // GET, SET, DEL, HIT, MISS
+        chave,
+        hit,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de cron job
+logger.logCron = (job, status, detalhes = {}) => {
+    const nivel = status === 'erro' ? 'error' : 'info';
+    logger[nivel]('CRON_JOB', {
+        job,
+        status, // iniciado, concluido, erro
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de operação de arquivo
+logger.logFile = (operacao, arquivo, detalhes = {}) => {
+    logger.info('FILE_OPERATION', {
+        operacao, // upload, download, delete
+        arquivo,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de reembolso
+logger.logReembolso = (acao, reembolsoId, detalhes = {}) => {
+    logger.info('REEMBOLSO', {
+        acao, // criado, aprovado, rejeitado, pago, editado
+        reembolso_id: reembolsoId,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
+// Log de vale
+logger.logVale = (acao, valeId, detalhes = {}) => {
+    logger.info('VALE', {
+        acao, // gerado, validado, utilizado, expirado
+        vale_id: valeId,
+        ...detalhes,
+        timestamp: new Date().toISOString()
+    });
+};
+
 module.exports = logger;

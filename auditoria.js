@@ -41,9 +41,19 @@ const ACOES = {
     // Solicitações
     APROVAR_SOLICITACAO: 'aprovar_solicitacao',
     REJEITAR_SOLICITACAO: 'rejeitar_solicitacao',
-    
+
     // Configurações
-    ALTERAR_CONFIGURACAO: 'alterar_configuracao'
+    ALTERAR_CONFIGURACAO: 'alterar_configuracao',
+
+    // Reembolsos
+    CRIAR_REEMBOLSO: 'criar_reembolso',
+    APROVAR_REEMBOLSO: 'aprovar_reembolso',
+    REJEITAR_REEMBOLSO: 'rejeitar_reembolso',
+    PAGAR_REEMBOLSO: 'pagar_reembolso',
+    EDITAR_REEMBOLSO: 'editar_reembolso',
+    CANCELAR_REEMBOLSO: 'cancelar_reembolso',
+    EXCLUIR_REEMBOLSO: 'excluir_reembolso',
+    UPLOAD_DOCUMENTO: 'upload_documento'
 };
 
 // Descrições amigáveis das ações
@@ -71,7 +81,17 @@ const DESCRICOES_ACOES = {
     desativar_usuario: 'Desativou usuário RH',
     aprovar_solicitacao: 'Aprovou solicitação',
     rejeitar_solicitacao: 'Rejeitou solicitação',
-    alterar_configuracao: 'Alterou configuração do sistema'
+    alterar_configuracao: 'Alterou configuração do sistema',
+
+    // Reembolsos
+    criar_reembolso: 'Criou solicitação de reembolso',
+    aprovar_reembolso: 'Aprovou reembolso',
+    rejeitar_reembolso: 'Rejeitou reembolso',
+    pagar_reembolso: 'Registrou pagamento de reembolso',
+    editar_reembolso: 'Editou reembolso',
+    cancelar_reembolso: 'Cancelou reembolso',
+    excluir_reembolso: 'Excluiu reembolso',
+    upload_documento: 'Anexou documento ao reembolso'
 };
 
 /**

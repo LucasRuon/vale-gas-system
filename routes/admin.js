@@ -540,7 +540,8 @@ router.post('/distribuidores', async (req, res) => {
         const {
             nome, cnpj, email, telefone, responsavel,
             cep, logradouro, numero, complemento, bairro, cidade, estado,
-            horario_funcionamento, tipo_distribuidor
+            horario_funcionamento, tipo_distribuidor,
+            banco, agencia, conta, tipo_conta, pix
         } = req.body;
 
         // Validações
@@ -591,9 +592,9 @@ router.post('/distribuidores', async (req, res) => {
         const tipoDistribuidor = tipo_distribuidor === 'interno' ? 'interno' : 'externo';
         const result = await runQuery(
             `INSERT INTO distribuidores
-            (nome, cnpj, email, senha, telefone, responsavel, cep, logradouro, numero, complemento, bairro, cidade, estado, latitude, longitude, horario_funcionamento, tipo_distribuidor)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [nome, cnpjLimpo, email, senhaHash, telefone, responsavel, cep, logradouro, numero, complemento || '', bairro, cidade, estado, latitude, longitude, horario_funcionamento || '', tipoDistribuidor]
+            (nome, cnpj, email, senha, telefone, responsavel, cep, logradouro, numero, complemento, bairro, cidade, estado, latitude, longitude, horario_funcionamento, tipo_distribuidor, banco, agencia, conta, tipo_conta, pix)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [nome, cnpjLimpo, email, senhaHash, telefone, responsavel, cep, logradouro, numero, complemento || '', bairro, cidade, estado, latitude, longitude, horario_funcionamento || '', tipoDistribuidor, banco || '', agencia || '', conta || '', tipo_conta || '', pix || '']
         );
 
         // Enviar webhook
@@ -617,6 +618,117 @@ router.post('/distribuidores', async (req, res) => {
     }
 });
 
+// Importar distribuidores em massa
+router.post('/distribuidores/importar', verificarNivel('admin'), async (req, res) => {
+    try {
+        const { distribuidores } = req.body;
+
+        if (!distribuidores || !Array.isArray(distribuidores) || distribuidores.length === 0) {
+            return res.status(400).json({ erro: 'Nenhum distribuidor para importar' });
+        }
+
+        if (distribuidores.length > 200) {
+            return res.status(400).json({ erro: 'Máximo de 200 distribuidores por importação' });
+        }
+
+        const resultados = {
+            importados: 0,
+            erros: [],
+            senhas: []
+        };
+
+        for (const dist of distribuidores) {
+            try {
+                const {
+                    nome, cnpj, email, telefone, responsavel,
+                    cep, logradouro, numero, complemento, bairro, cidade, estado,
+                    horario_funcionamento, tipo_distribuidor
+                } = dist;
+
+                // Validar campos obrigatórios (endereço é opcional na importação)
+                if (!nome || !cnpj || !email || !telefone || !responsavel || !cidade || !estado) {
+                    resultados.erros.push(`${nome || cnpj}: Campos obrigatórios faltando (nome, cnpj, email, telefone, responsavel, cidade, estado)`);
+                    continue;
+                }
+
+                // Limpar CNPJ
+                const cnpjLimpo = cnpj.replace(/\D/g, '');
+
+                // Validar CNPJ
+                if (!validarCNPJ(cnpjLimpo)) {
+                    resultados.erros.push(`${nome}: CNPJ inválido`);
+                    continue;
+                }
+
+                // Verificar se já existe
+                const existe = await getQuery(
+                    'SELECT id FROM distribuidores WHERE cnpj = ? OR email = ?',
+                    [cnpjLimpo, email]
+                );
+
+                if (existe) {
+                    resultados.erros.push(`${nome}: CNPJ ou Email já cadastrado`);
+                    continue;
+                }
+
+                // Gerar senha
+                const senhaTemporaria = gerarSenhaAleatoria(8);
+                const senhaHash = await hashSenha(senhaTemporaria);
+
+                // Definir tipo
+                const tipoDistribuidor = tipo_distribuidor === 'interno' ? 'interno' : 'externo';
+
+                // Inserir
+                const result = await runQuery(`
+                    INSERT INTO distribuidores (
+                        nome, cnpj, email, senha, telefone, responsavel,
+                        cep, logradouro, numero, complemento, bairro, cidade, estado,
+                        horario_funcionamento, tipo_distribuidor, ativo
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                `, [nome, cnpjLimpo, email, senhaHash, telefone, responsavel,
+                    cep || '', logradouro || '', numero || '', complemento || '', bairro || '', cidade, estado.toUpperCase(),
+                    horario_funcionamento || '', tipoDistribuidor]);
+
+                resultados.importados++;
+                resultados.senhas.push({
+                    nome,
+                    cnpj: cnpjLimpo,
+                    email,
+                    senha: senhaTemporaria
+                });
+
+            } catch (err) {
+                resultados.erros.push(`${dist.nome || dist.cnpj}: ${err.message}`);
+            }
+        }
+
+        // Registrar auditoria
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: 'importar_distribuidores',
+            detalhes: {
+                total_enviado: distribuidores.length,
+                importados: resultados.importados,
+                erros: resultados.erros.length
+            },
+            ip: getClientIP(req)
+        });
+
+        res.json({
+            sucesso: true,
+            importados: resultados.importados,
+            erros: resultados.erros,
+            senhas: resultados.senhas
+        });
+
+    } catch (error) {
+        console.error('Erro ao importar distribuidores:', error);
+        res.status(500).json({ erro: 'Erro interno do servidor' });
+    }
+});
+
 // Atualizar distribuidor
 router.put('/distribuidores/:id', async (req, res) => {
     try {
@@ -624,7 +736,8 @@ router.put('/distribuidores/:id', async (req, res) => {
         const {
             nome, email, telefone, responsavel,
             cep, logradouro, numero, complemento, bairro, cidade, estado,
-            horario_funcionamento, ativo, tipo_distribuidor
+            horario_funcionamento, ativo, tipo_distribuidor,
+            banco, agencia, conta, tipo_conta, pix
         } = req.body;
 
         const distribuidor = await getQuery('SELECT id FROM distribuidores WHERE id = ?', [id]);
@@ -670,6 +783,12 @@ router.put('/distribuidores/:id', async (req, res) => {
             campos.push('tipo_distribuidor = ?');
             valores.push(tipo_distribuidor);
         }
+        // Dados bancários
+        if (banco !== undefined) { campos.push('banco = ?'); valores.push(banco); }
+        if (agencia !== undefined) { campos.push('agencia = ?'); valores.push(agencia); }
+        if (conta !== undefined) { campos.push('conta = ?'); valores.push(conta); }
+        if (tipo_conta !== undefined) { campos.push('tipo_conta = ?'); valores.push(tipo_conta || null); }
+        if (pix !== undefined) { campos.push('pix = ?'); valores.push(pix); }
 
         // Atualizar coordenadas se endereço foi alterado
         if (logradouro || numero || cidade || estado) {

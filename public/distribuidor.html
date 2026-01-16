@@ -323,6 +323,7 @@
             <button class="tab active" onclick="showTab('validar')">Validar Vale</button>
             <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
             <button class="tab" onclick="showTab('historico')">Histórico</button>
+            <button class="tab" id="tabReembolsos" onclick="showTab('reembolsos')" style="display:none">Reembolsos</button>
             <button class="tab" onclick="showTab('perfil')">Perfil</button>
         </div>
 
@@ -393,6 +394,62 @@
                 </form>
             </div>
         </div>
+
+        <!-- Aba de Reembolsos (apenas distribuidores externos) -->
+        <div id="tab-reembolsos" class="section">
+            <!-- Status dos Reembolsos -->
+            <div class="stats-grid" style="margin-bottom:16px">
+                <div class="stat-card" style="border-left:4px solid var(--warning)">
+                    <h3 id="reemb-a-validar">0</h3>
+                    <p>A Validar</p>
+                </div>
+                <div class="stat-card" style="border-left:4px solid #3b82f6">
+                    <h3 id="reemb-aprovado">0</h3>
+                    <p>Aprovados</p>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--success)">
+                    <h3 id="reemb-pago">0</h3>
+                    <p>Pagos</p>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--danger)">
+                    <h3 id="reemb-rejeitado">0</h3>
+                    <p>Rejeitados</p>
+                </div>
+            </div>
+            <!-- Valores Totais -->
+            <div class="stats-grid">
+                <div class="stat-card highlight" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)">
+                    <h3 id="reemb-valor-aprovado" style="color:white">R$ 0,00</h3>
+                    <p style="color:rgba(255,255,255,0.9)">Total Aprovado (aguardando)</p>
+                </div>
+                <div class="stat-card highlight" style="background:linear-gradient(135deg, var(--success) 0%, #059669 100%)">
+                    <h3 id="reemb-valor-pago" style="color:white">R$ 0,00</h3>
+                    <p style="color:rgba(255,255,255,0.9)">Total Pago</p>
+                </div>
+                <div class="stat-card" style="border-left:4px solid var(--primary)">
+                    <h3 id="reemb-valor-total">R$ 0,00</h3>
+                    <p>Total Geral (Aprovado + Pago)</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="card-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                    <span>Meus Reembolsos</span>
+                    <button class="btn btn-success" onclick="exportarReembolsosDist()" style="font-size:13px;padding:8px 16px">Exportar CSV</button>
+                </h3>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+                    <select id="filtroStatusReemb" class="form-control" style="width:auto" onchange="loadReembolsos()">
+                        <option value="">Todos os Status</option>
+                        <option value="a_validar">A Validar</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="pago">Pago</option>
+                        <option value="rejeitado">Rejeitado</option>
+                    </select>
+                    <input type="month" id="filtroMesReemb" class="form-control" style="width:auto" onchange="loadReembolsos()">
+                    <button class="btn btn-primary" onclick="loadReembolsos()" style="font-size:13px;padding:8px 16px">Filtrar</button>
+                </div>
+                <div id="reembolsosContent"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -455,10 +512,11 @@
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelector(`[onclick="showTab('${name}')"]`).classList.add('active');
             document.getElementById('tab-' + name).classList.add('active');
-            
+
             if (name === 'dashboard') loadDashboard();
             if (name === 'historico') loadHistorico();
             if (name === 'perfil') loadPerfil();
+            if (name === 'reembolsos') loadReembolsos();
         }
 
         document.getElementById('codigoInput').addEventListener('input', function(e) {
@@ -568,6 +626,99 @@
             else alert(d?.erro || 'Erro ao alterar senha');
         };
 
+        // ========================================
+        // REEMBOLSOS (apenas distribuidores externos)
+        // ========================================
+        let isDistribuidorExterno = false;
+
+        async function verificarTipoDistribuidor() {
+            const d = await api('/distribuidor/reembolsos?limite=1');
+            if (d && d.sucesso && !d.mensagem) {
+                isDistribuidorExterno = true;
+                document.getElementById('tabReembolsos').style.display = 'inline-block';
+            }
+        }
+
+        async function loadReembolsos() {
+            if (!isDistribuidorExterno) return;
+
+            const status = document.getElementById('filtroStatusReemb').value;
+            const mes = document.getElementById('filtroMesReemb').value;
+
+            let url = '/distribuidor/reembolsos?';
+            if (status) url += `status=${status}&`;
+            if (mes) url += `mes=${mes}&`;
+
+            const d = await api(url);
+            if (!d || !d.sucesso) {
+                document.getElementById('reembolsosContent').innerHTML = '<div class="empty-state">Erro ao carregar reembolsos</div>';
+                return;
+            }
+
+            // Atualizar estatísticas de status
+            document.getElementById('reemb-a-validar').textContent = d.stats.a_validar || 0;
+            document.getElementById('reemb-aprovado').textContent = d.stats.aprovado || 0;
+            document.getElementById('reemb-pago').textContent = d.stats.pago || 0;
+            document.getElementById('reemb-rejeitado').textContent = d.stats.rejeitado || 0;
+
+            // Atualizar valores
+            const valorAprovado = parseFloat(d.stats.valor_aprovado || 0);
+            const valorPago = parseFloat(d.stats.valor_pago || 0);
+            const valorTotal = valorAprovado + valorPago;
+
+            document.getElementById('reemb-valor-aprovado').textContent = 'R$ ' + valorAprovado.toFixed(2).replace('.', ',');
+            document.getElementById('reemb-valor-pago').textContent = 'R$ ' + valorPago.toFixed(2).replace('.', ',');
+            document.getElementById('reemb-valor-total').textContent = 'R$ ' + valorTotal.toFixed(2).replace('.', ',');
+
+            if (!d.dados || d.dados.length === 0) {
+                document.getElementById('reembolsosContent').innerHTML = '<div class="empty-state">Nenhum reembolso encontrado</div>';
+                return;
+            }
+
+            const statusBadge = (s) => {
+                const b = {'a_validar':'background:#fef3cd;color:#856404','aprovado':'background:#cfe2ff;color:#084298','pago':'background:#d1e7dd;color:#0f5132','rejeitado':'background:#f8d7da;color:#842029'};
+                const t = {'a_validar':'A Validar','aprovado':'Aprovado','pago':'Pago','rejeitado':'Rejeitado'};
+                return `<span style="${b[s]||''};padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500">${t[s]||s}</span>`;
+            };
+
+            document.getElementById('reembolsosContent').innerHTML = `
+                <table>
+                    <thead><tr><th>ID</th><th>Colaborador</th><th>Código</th><th>Mês</th><th>Valor</th><th>Status</th></tr></thead>
+                    <tbody>${d.dados.map(r => `
+                        <tr>
+                            <td>${r.id}</td>
+                            <td>${r.colaborador_nome || '-'}<br><small style="color:var(--text-secondary)">${r.colaborador_cpf || ''}</small></td>
+                            <td><code>${r.codigo_vale || '-'}</code></td>
+                            <td>${formatarMes(r.mes_referencia)}</td>
+                            <td style="font-weight:600;color:var(--success)">R$ ${parseFloat(r.valor).toFixed(2).replace('.', ',')}</td>
+                            <td>${statusBadge(r.status)}</td>
+                        </tr>
+                    `).join('')}</tbody>
+                </table>
+            `;
+        }
+
+        function formatarMes(mes) {
+            if (!mes) return '-';
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const p = mes.split('-');
+            if (p.length !== 2) return mes;
+            return `${meses[parseInt(p[1]) - 1]}/${p[0]}`;
+        }
+
+        function exportarReembolsosDist() {
+            const status = document.getElementById('filtroStatusReemb').value;
+            const mes = document.getElementById('filtroMesReemb').value;
+
+            let url = '/api/distribuidor/reembolsos/exportar/csv?token=' + token;
+            if (status) url += `&status=${status}`;
+            if (mes) url += `&mes=${mes}`;
+
+            window.location.href = url;
+        }
+
+        // Inicialização
+        verificarTipoDistribuidor();
         loadDashboard();
     </script>
 </body>

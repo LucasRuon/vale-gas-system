@@ -82,13 +82,24 @@
         .layout { display: flex; min-height: calc(100vh - 64px); }
         
         /* Sidebar */
-        .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 16px 0; transition: background 0.3s, border-color 0.3s; }
+        .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 16px 0; transition: width 0.3s ease, background 0.3s, border-color 0.3s; overflow: hidden; }
+        .sidebar.collapsed { width: 64px; }
         .sidebar-menu { list-style: none; }
-        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent; white-space: nowrap; }
+        .sidebar.collapsed .sidebar-menu a { padding: 12px 20px; justify-content: center; }
+        .sidebar.collapsed .sidebar-menu a span { display: none; }
         .sidebar-menu a:hover { background: var(--gray-100); color: var(--text-primary); }
         .sidebar-menu a.active { background: rgba(5, 52, 98, 0.15); color: var(--primary); border-left-color: var(--primary); }
         [data-theme="dark"] .sidebar-menu a.active { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-left-color: #60a5fa; }
-        .sidebar-menu svg { width: 20px; height: 20px; opacity: 0.7; }
+        .sidebar-menu svg { width: 20px; height: 20px; opacity: 0.7; flex-shrink: 0; }
+
+        /* Toggle Sidebar Button */
+        .sidebar-toggle { display: flex; align-items: center; justify-content: flex-end; padding: 8px 16px; margin-bottom: 8px; }
+        .sidebar.collapsed .sidebar-toggle { justify-content: center; padding: 8px; }
+        .btn-toggle-sidebar { background: var(--gray-100); border: none; padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .btn-toggle-sidebar:hover { background: var(--gray-200); }
+        .btn-toggle-sidebar svg { width: 18px; height: 18px; color: var(--text-secondary); transition: transform 0.3s; }
+        .sidebar.collapsed .btn-toggle-sidebar svg { transform: rotate(180deg); }
 
         /* Main */
         .main { flex: 1; padding: 24px; overflow-x: auto; }
@@ -213,19 +224,24 @@
     </nav>
 
     <div class="layout">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-toggle">
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Recolher/Expandir menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+                </button>
+            </div>
             <ul class="sidebar-menu">
-                <li><a href="#" class="active" data-section="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a></li>
-                <li><a href="#" data-section="colaboradores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Colaboradores</a></li>
-                <li><a href="#" data-section="distribuidores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Distribuidores</a></li>
-                <li><a href="#" data-section="vales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Vales-Gás</a></li>
-                <li><a href="#" data-section="reembolsos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Reembolsos</a></li>
-                <li><a href="#" data-section="solicitacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15l2 2 4-4"/></svg>Solicitações</a></li>
-                <li><a href="#" data-section="relatorios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Relatórios</a></li>
-                <li id="menuUsuarios" style="display:none"><a href="#" data-section="usuarios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/><rect x="3" y="10" width="18" height="12" rx="2"/><circle cx="12" cy="16" r="1"/></svg>Usuários RH</a></li>
-                <li id="menuNotificacoes" style="display:none"><a href="#" data-section="notificacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notificações</a></li>
-                <li id="menuConfiguracoes" style="display:none"><a href="#" data-section="configuracoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Configurações</a></li>
-                <li id="menuAuditoria" style="display:none"><a href="#" data-section="auditoria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Auditoria</a></li>
+                <li><a href="#" class="active" data-section="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Dashboard</span></a></li>
+                <li><a href="#" data-section="colaboradores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Colaboradores</span></a></li>
+                <li><a href="#" data-section="distribuidores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Distribuidores</span></a></li>
+                <li><a href="#" data-section="vales"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span>Vales-Gás</span></a></li>
+                <li><a href="#" data-section="reembolsos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Reembolsos</span></a></li>
+                <li><a href="#" data-section="solicitacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M9 15l2 2 4-4"/></svg><span>Solicitações</span></a></li>
+                <li><a href="#" data-section="relatorios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Relatórios</span></a></li>
+                <li id="menuUsuarios" style="display:none"><a href="#" data-section="usuarios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a5 5 0 0 1 5 5v3H7V7a5 5 0 0 1 5-5z"/><rect x="3" y="10" width="18" height="12" rx="2"/><circle cx="12" cy="16" r="1"/></svg><span>Usuários RH</span></a></li>
+                <li id="menuNotificacoes" style="display:none"><a href="#" data-section="notificacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Notificações</span></a></li>
+                <li id="menuConfiguracoes" style="display:none"><a href="#" data-section="configuracoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Configurações</span></a></li>
+                <li id="menuAuditoria" style="display:none"><a href="#" data-section="auditoria"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Auditoria</span></a></li>
             </ul>
         </aside>
 
@@ -235,41 +251,143 @@
                 <h1 class="page-title">Dashboard</h1>
                 <div id="statsGrid" class="stats-grid"></div>
                 
-                <!-- Gráficos em Grid -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:20px;margin-top:20px">
+                <!-- Seção de Vales-Gás -->
+                <div style="margin-top:24px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#053462 0%,#0a4a8a 100%);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    </div>
+                    <div>
+                        <h2 style="font-size:18px;font-weight:600;color:var(--text-primary);margin:0">Vales-Gás</h2>
+                        <p style="font-size:12px;color:var(--text-secondary);margin:0">Acompanhamento de emissão e utilização de vales</p>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(380px, 1fr));gap:20px">
                     <!-- Gráfico de Retiradas por Mês -->
-                    <div class="card">
-                        <div class="card-header"><h3 class="card-title">Retiradas dos Últimos 6 Meses</h3></div>
-                        <div style="padding:20px;height:280px">
+                    <div class="card" style="border-top:3px solid #053462">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#053462" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                <h3 class="card-title" style="margin:0">Retiradas Mensais</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(5,52,98,0.1);padding:4px 8px;border-radius:12px;color:#053462;font-weight:500">6 meses</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
                             <canvas id="chartRetiradas"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Gráfico de Status dos Vales -->
-                    <div class="card">
-                        <div class="card-header"><h3 class="card-title">Status dos Vales (Mês Atual)</h3></div>
-                        <div style="padding:20px;height:280px;display:flex;align-items:center;justify-content:center">
-                            <canvas id="chartStatus" style="max-width:250px"></canvas>
+                    <div class="card" style="border-top:3px solid #8b5cf6">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                <h3 class="card-title" style="margin:0">Status dos Vales</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(139,92,246,0.1);padding:4px 8px;border-radius:12px;color:#8b5cf6;font-weight:500">Mês atual</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px;display:flex;align-items:center;justify-content:center">
+                            <canvas id="chartStatus" style="max-width:220px"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Gráfico de Taxa de Utilização -->
-                    <div class="card">
-                        <div class="card-header"><h3 class="card-title">Taxa de Utilização por Mês</h3></div>
-                        <div style="padding:20px;height:280px">
+                    <div class="card" style="border-top:3px solid #06b6d4">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                                <h3 class="card-title" style="margin:0">Taxa de Utilização</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(6,182,212,0.1);padding:4px 8px;border-radius:12px;color:#06b6d4;font-weight:500">%</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
                             <canvas id="chartTaxa"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Top Distribuidores -->
-                    <div class="card">
-                        <div class="card-header"><h3 class="card-title">Top 5 Distribuidores (Mês Atual)</h3></div>
-                        <div style="padding:20px;height:280px">
+                    <div class="card" style="border-top:3px solid #ec4899">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                                <h3 class="card-title" style="margin:0">Top Distribuidores</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(236,72,153,0.1);padding:4px 8px;border-radius:12px;color:#ec4899;font-weight:500">Top 5</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
                             <canvas id="chartDistribuidores"></canvas>
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- Gráficos de Reembolsos -->
+                <!-- Seção de Reembolsos -->
+                <div style="margin-top:32px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+                    <div style="width:40px;height:40px;background:linear-gradient(135deg,#DC3E31 0%,#b82e23 100%);border-radius:10px;display:flex;align-items:center;justify-content:center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div>
+                        <h2 style="font-size:18px;font-weight:600;color:var(--text-primary);margin:0">Reembolsos</h2>
+                        <p style="font-size:12px;color:var(--text-secondary);margin:0">Acompanhamento financeiro dos distribuidores externos</p>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(380px, 1fr));gap:20px">
+                    <!-- Gráfico de Reembolsos por Mês -->
+                    <div class="card" style="border-top:3px solid #DC3E31">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC3E31" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <h3 class="card-title" style="margin:0">Quantidade Mensal</h3>
+                            </div>
+                            <span style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:12px;color:var(--text-secondary)">Últimos 6 meses</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
+                            <canvas id="chartReembolsosMes"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de Status dos Reembolsos -->
+                    <div class="card" style="border-top:3px solid #3b82f6">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <h3 class="card-title" style="margin:0">Status Atual</h3>
+                            </div>
+                            <span style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:12px;color:var(--text-secondary)">Mês atual</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px;display:flex;align-items:center;justify-content:center">
+                            <canvas id="chartReembolsosStatus" style="max-width:220px"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de Valores por Mês -->
+                    <div class="card" style="border-top:3px solid #10b981">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <h3 class="card-title" style="margin:0">Valores Mensais</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(16,185,129,0.1);padding:4px 8px;border-radius:12px;color:#10b981;font-weight:500">R$ Total</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
+                            <canvas id="chartReembolsosValor"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Distribuidores por Reembolso -->
+                    <div class="card" style="border-top:3px solid #f59e0b">
+                        <div class="card-header" style="border-bottom:none;padding-bottom:0">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                                <h3 class="card-title" style="margin:0">Ranking Distribuidores</h3>
+                            </div>
+                            <span style="font-size:11px;background:rgba(245,158,11,0.1);padding:4px 8px;border-radius:12px;color:#f59e0b;font-weight:500">Top 5</span>
+                        </div>
+                        <div style="padding:16px 20px;height:260px">
+                            <canvas id="chartReembolsosDist"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tabela de Retiradas por Distribuidor -->
                 <div class="card" style="margin-top:20px">
                     <div class="card-header"><h3 class="card-title">Detalhes por Distribuidor (Mês Atual)</h3></div>
@@ -313,7 +431,10 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Lista de Distribuidores</h3>
-                        <button class="btn btn-primary" onclick="openModal('dist')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Distribuidor</button>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-success" onclick="abrirModalImportarDist()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Importar</button>
+                            <button class="btn btn-primary" onclick="openModal('dist')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Novo Distribuidor</button>
+                        </div>
                     </div>
                     <div class="search-bar">
                         <input type="text" id="searchDist" class="form-control search-input" placeholder="Buscar por nome, CNPJ, cidade...">
@@ -347,8 +468,84 @@
                 </div>
             </div>
 
-            <!-- Reembolsos - Ver public/reembolsos-section.html -->
-            <div id="s-reembolsos" class="section"></div>
+            <!-- Reembolsos -->
+            <div id="s-reembolsos" class="section">
+                <h1 class="page-title">Gestão de Reembolsos</h1>
+
+                <!-- Cards de Estatísticas -->
+                <div class="stats-grid" id="reembolsosStats">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">A Validar</div>
+                            <div class="stat-value" id="reembolsos-a-validar">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Aprovados</div>
+                            <div class="stat-value" id="reembolsos-aprovados">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Pagos</div>
+                            <div class="stat-value" id="reembolsos-pagos">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total Aprovado</div>
+                            <div class="stat-value" id="reembolsos-total">R$ 0,00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3 class="card-title">Filtros</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="limparFiltrosReembolsos()">Limpar</button>
+                    </div>
+                    <div class="search-bar" style="display:flex;flex-wrap:wrap;gap:12px;padding:16px">
+                        <select id="filtro-status-reembolso" class="form-control" style="width:auto" onchange="loadReembolsos()">
+                            <option value="">Todos os Status</option>
+                            <option value="a_validar">A Validar</option>
+                            <option value="aprovado">Aprovado</option>
+                            <option value="pago">Pago</option>
+                            <option value="rejeitado">Rejeitado</option>
+                        </select>
+                        <select id="filtro-distribuidor-reembolso" class="form-control" style="width:auto" onchange="loadReembolsos()">
+                            <option value="">Todos Distribuidores</option>
+                        </select>
+                        <input type="month" id="filtro-mes-reembolso" class="form-control" style="width:auto" onchange="loadReembolsos()">
+                        <button class="btn btn-outline" onclick="loadReembolsos()">Filtrar</button>
+                    </div>
+                </div>
+
+                <!-- Tabela de Reembolsos -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Lista de Reembolsos</h3>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-success btn-sm" onclick="exportarReembolsosCSV()">Exportar CSV</button>
+                            <button class="btn btn-primary btn-sm" onclick="abrirModalNovoReembolso()">Novo Reembolso</button>
+                        </div>
+                    </div>
+                    <div id="tableReembolsos"></div>
+                </div>
+            </div>
 
             <!-- Solicitações -->
             <div id="s-solicitacoes" class="section">
@@ -614,38 +811,136 @@
 
             <!-- Auditoria -->
             <div id="s-auditoria" class="section">
-                <h1 class="page-title">Logs de Auditoria</h1>
-                <div class="card">
+                <!-- Header da Seção -->
+                <div style="margin-bottom:24px;display:flex;align-items:center;gap:12px">
+                    <div style="width:48px;height:48px;background:linear-gradient(135deg,#7c3aed 0%,#a855f7 100%);border-radius:12px;display:flex;align-items:center;justify-content:center">
+                        <svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="page-title" style="margin:0;font-size:24px">Logs de Auditoria</h1>
+                        <p style="margin:4px 0 0;color:var(--text-secondary);font-size:14px">Rastreie todas as atividades realizadas no sistema</p>
+                    </div>
+                </div>
+
+                <!-- Estatísticas Rápidas -->
+                <div id="auditStats" class="stats-grid" style="margin-bottom:20px">
+                    <div class="stat-card" style="border-left:4px solid #7c3aed">
+                        <span class="stat-label">Ações Hoje</span>
+                        <span class="stat-value" id="auditHoje">-</span>
+                    </div>
+                    <div class="stat-card" style="border-left:4px solid #3b82f6">
+                        <span class="stat-label">Logins (7 dias)</span>
+                        <span class="stat-value" id="auditLogins">-</span>
+                    </div>
+                    <div class="stat-card" style="border-left:4px solid var(--success)">
+                        <span class="stat-label">Reembolsos Processados</span>
+                        <span class="stat-value" id="auditReembolsos">-</span>
+                    </div>
+                    <div class="stat-card" style="border-left:4px solid var(--warning)">
+                        <span class="stat-label">Vales Gerados (mês)</span>
+                        <span class="stat-value" id="auditVales">-</span>
+                    </div>
+                </div>
+
+                <div class="card" style="border-top:3px solid #7c3aed">
                     <div class="card-header">
-                        <h3 class="card-title">Histórico de Ações</h3>
+                        <h3 class="card-title" style="display:flex;align-items:center;gap:8px">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                            Filtros de Pesquisa
+                        </h3>
                     </div>
-                    <div class="search-bar" style="flex-wrap:wrap;gap:12px">
-                        <input type="date" id="auditDataIni" class="form-control" style="width:auto">
-                        <input type="date" id="auditDataFim" class="form-control" style="width:auto">
-                        <select id="auditTipoUsuario" class="form-control" style="width:auto">
-                            <option value="">Todos os usuários</option>
-                            <option value="admin">RH/Admin</option>
-                            <option value="colaborador">Colaborador</option>
-                            <option value="distribuidor">Distribuidor</option>
-                        </select>
-                        <select id="auditAcao" class="form-control" style="width:auto">
-                            <option value="">Todas as ações</option>
-                            <option value="login">Login</option>
-                            <option value="login_falha">Falha de Login</option>
-                            <option value="criar_colaborador">Criar Colaborador</option>
-                            <option value="editar_colaborador">Editar Colaborador</option>
-                            <option value="resetar_senha_colaborador">Resetar Senha Colab.</option>
-                            <option value="criar_distribuidor">Criar Distribuidor</option>
-                            <option value="editar_distribuidor">Editar Distribuidor</option>
-                            <option value="gerar_vale">Gerar Vale</option>
-                            <option value="gerar_vales_mensal">Gerar Vales Mensal</option>
-                            <option value="confirmar_retirada">Confirmar Retirada</option>
-                        </select>
-                        <input type="text" id="auditBusca" class="form-control" placeholder="Buscar por nome..." style="width:200px">
-                        <button class="btn btn-primary" onclick="loadAuditoria()">Filtrar</button>
+                    <div class="search-bar" style="flex-wrap:wrap;gap:12px;padding:16px">
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Data Inicial</label>
+                            <input type="date" id="auditDataIni" class="form-control" style="width:150px">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Data Final</label>
+                            <input type="date" id="auditDataFim" class="form-control" style="width:150px">
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Tipo de Usuário</label>
+                            <select id="auditTipoUsuario" class="form-control" style="width:150px">
+                                <option value="">Todos</option>
+                                <option value="admin">RH/Admin</option>
+                                <option value="colaborador">Colaborador</option>
+                                <option value="distribuidor">Distribuidor</option>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Categoria</label>
+                            <select id="auditAcao" class="form-control" style="width:200px">
+                                <option value="">Todas as ações</option>
+                                <optgroup label="Autenticação">
+                                    <option value="login">Login</option>
+                                    <option value="logout">Logout</option>
+                                    <option value="login_falha">Falha de Login</option>
+                                </optgroup>
+                                <optgroup label="Colaboradores">
+                                    <option value="criar_colaborador">Criar Colaborador</option>
+                                    <option value="editar_colaborador">Editar Colaborador</option>
+                                    <option value="ativar_colaborador">Ativar Colaborador</option>
+                                    <option value="desativar_colaborador">Desativar Colaborador</option>
+                                    <option value="resetar_senha_colaborador">Resetar Senha</option>
+                                </optgroup>
+                                <optgroup label="Distribuidores">
+                                    <option value="criar_distribuidor">Criar Distribuidor</option>
+                                    <option value="editar_distribuidor">Editar Distribuidor</option>
+                                    <option value="ativar_distribuidor">Ativar Distribuidor</option>
+                                    <option value="desativar_distribuidor">Desativar Distribuidor</option>
+                                    <option value="resetar_senha_distribuidor">Resetar Senha</option>
+                                </optgroup>
+                                <optgroup label="Vales">
+                                    <option value="gerar_vale">Gerar Vale Individual</option>
+                                    <option value="gerar_vales_mensal">Gerar Vales Mensal</option>
+                                    <option value="validar_vale">Validar Vale</option>
+                                    <option value="confirmar_retirada">Confirmar Retirada</option>
+                                </optgroup>
+                                <optgroup label="Reembolsos">
+                                    <option value="criar_reembolso">Criar Reembolso</option>
+                                    <option value="aprovar_reembolso">Aprovar Reembolso</option>
+                                    <option value="rejeitar_reembolso">Rejeitar Reembolso</option>
+                                    <option value="pagar_reembolso">Pagar Reembolso</option>
+                                    <option value="editar_reembolso">Editar Reembolso</option>
+                                    <option value="excluir_reembolso">Excluir Reembolso</option>
+                                    <option value="upload_documento">Upload Documento</option>
+                                </optgroup>
+                                <optgroup label="Usuários RH">
+                                    <option value="criar_usuario">Criar Usuário</option>
+                                    <option value="editar_usuario">Editar Usuário</option>
+                                    <option value="ativar_usuario">Ativar Usuário</option>
+                                    <option value="desativar_usuario">Desativar Usuário</option>
+                                </optgroup>
+                                <optgroup label="Sistema">
+                                    <option value="alterar_configuracao">Alterar Configuração</option>
+                                    <option value="aprovar_solicitacao">Aprovar Solicitação</option>
+                                    <option value="rejeitar_solicitacao">Rejeitar Solicitação</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label style="font-size:11px;font-weight:600;color:var(--text-secondary)">Buscar Nome</label>
+                            <input type="text" id="auditBusca" class="form-control" placeholder="Nome do usuário..." style="width:180px">
+                        </div>
+                        <div style="display:flex;align-items:flex-end">
+                            <button class="btn btn-primary" onclick="loadAuditoria()" style="height:38px">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right:6px"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                Filtrar
+                            </button>
+                        </div>
+                        <div style="display:flex;align-items:flex-end">
+                            <button class="btn btn-outline" onclick="limparFiltrosAuditoria()" style="height:38px">Limpar</button>
+                        </div>
                     </div>
-                    <div id="tableAuditoria" style="margin-top:20px"></div>
-                    <div id="paginacaoAuditoria" style="margin-top:16px;display:flex;gap:8px;justify-content:center"></div>
+                </div>
+
+                <div class="card" style="margin-top:16px">
+                    <div class="card-header">
+                        <h3 class="card-title">Histórico Completo de Atividades</h3>
+                        <span id="auditTotal" style="font-size:13px;color:var(--text-secondary)"></span>
+                    </div>
+                    <div id="tableAuditoria" style="margin-top:0"></div>
+                    <div id="paginacaoAuditoria" style="padding:16px;display:flex;gap:8px;justify-content:center;border-top:1px solid var(--border)"></div>
                 </div>
             </div>
 
@@ -732,7 +1027,7 @@
                         <div class="form-group"><label class="form-label">Horário de Funcionamento</label><input type="text" id="dHor" class="form-control" placeholder="Ex: Seg-Sex 8h às 18h"></div>
                         <div class="form-group">
                             <label class="form-label">Tipo de Distribuidor *</label>
-                            <select id="dTipo" class="form-control" required>
+                            <select id="dTipo" class="form-control" required onchange="toggleDadosBancarios()">
                                 <option value="externo">Externo (Recebe Reembolso)</option>
                                 <option value="interno">Interno (Consigaz)</option>
                             </select>
@@ -754,6 +1049,26 @@
                         <div class="form-group"><label class="form-label">Cidade *</label><input type="text" id="dCidade" class="form-control" required></div>
                     </div>
                     <div class="form-group" style="max-width: 100px;"><label class="form-label">UF *</label><input type="text" id="dUF" class="form-control" required maxlength="2"></div>
+
+                    <div id="dadosBancarios" style="display:none">
+                        <h4 style="margin: 20px 0 12px; font-size: 14px; color: var(--text-secondary);">Dados Bancários (para Reembolso)</h4>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Banco</label><input type="text" id="dBanco" class="form-control" placeholder="Ex: Banco do Brasil"></div>
+                            <div class="form-group"><label class="form-label">Agência</label><input type="text" id="dAgencia" class="form-control" placeholder="Ex: 1234-5"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Conta</label><input type="text" id="dConta" class="form-control" placeholder="Ex: 12345-6"></div>
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Conta</label>
+                                <select id="dTipoConta" class="form-control">
+                                    <option value="">Selecione...</option>
+                                    <option value="corrente">Corrente</option>
+                                    <option value="poupanca">Poupança</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="form-label">Chave PIX</label><input type="text" id="dPix" class="form-control" placeholder="CPF, CNPJ, Email, Telefone ou Chave Aleatória"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeModal('dist')">Cancelar</button>
@@ -933,6 +1248,258 @@
         </div>
     </div>
 
+    <!-- Modal Importação Distribuidores -->
+    <div id="modalImportDist" class="modal">
+        <div class="modal-content" style="max-width:750px">
+            <div class="modal-header">
+                <h3 class="modal-title">📤 Importar Distribuidores</h3>
+                <button class="modal-close" onclick="closeModal('importDist')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Etapa 1: Upload -->
+                <div id="importDistEtapa1">
+                    <div style="background:var(--gray-50);border:2px dashed var(--gray-300);border-radius:12px;padding:32px;text-align:center;margin-bottom:24px">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--text-secondary)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <p style="margin-bottom:16px;color:var(--text-secondary)">Selecione um arquivo Excel (.xlsx) ou CSV</p>
+                        <input type="file" id="arquivoImportDist" accept=".xlsx,.xls,.csv" style="display:none" onchange="processarArquivoImportDist(this)">
+                        <button class="btn btn-primary" onclick="document.getElementById('arquivoImportDist').click()">Selecionar Arquivo</button>
+                    </div>
+
+                    <div style="background:#e0f2fe;border:1px solid #0ea5e9;border-radius:8px;padding:16px;margin-bottom:16px">
+                        <p style="font-size:14px;font-weight:600;color:#0369a1;margin-bottom:8px">📋 Formato esperado do arquivo:</p>
+                        <p style="font-size:13px;color:#0369a1;margin-bottom:12px">O arquivo deve conter as seguintes colunas (na primeira linha):</p>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px">
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">nome*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">cnpj*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">email*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">telefone*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">responsavel*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">cep*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">logradouro*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">numero*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">bairro*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">cidade*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500">estado*</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;color:var(--text-secondary)">complemento</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;color:var(--text-secondary)">horario_funcionamento</span>
+                            <span style="background:white;padding:4px 8px;border-radius:4px;font-size:12px;color:var(--text-secondary)">tipo_distribuidor</span>
+                        </div>
+                        <p style="font-size:11px;color:#0369a1;margin-top:8px">* Campos obrigatórios | tipo_distribuidor: "interno" ou "externo" (padrão: externo)</p>
+                    </div>
+
+                    <button class="btn btn-outline" onclick="baixarModeloImportDist()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Baixar Modelo Excel
+                    </button>
+                </div>
+
+                <!-- Etapa 2: Preview e Validação -->
+                <div id="importDistEtapa2" style="display:none">
+                    <div id="importDistResumo" style="margin-bottom:20px"></div>
+                    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px">
+                        <table id="importDistPreview"></table>
+                    </div>
+                </div>
+
+                <!-- Etapa 3: Resultado -->
+                <div id="importDistEtapa3" style="display:none">
+                    <div id="importDistResultado"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('importDist')">Cancelar</button>
+                <button type="button" id="btnConfirmarImportDist" class="btn btn-primary" style="display:none" onclick="confirmarImportDist()">Importar Distribuidores</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes Reembolso -->
+    <div id="modalReembolso" class="modal">
+        <div class="modal-content" style="max-width:800px">
+            <div class="modal-header">
+                <h3 class="modal-title">Detalhes do Reembolso #<span id="det-reembolso-id"></span></h3>
+                <button class="modal-close" onclick="closeModal('reembolso')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px">
+                    <div><strong>Distribuidor:</strong><br><span id="det-distribuidor"></span></div>
+                    <div><strong>CNPJ:</strong><br><span id="det-cnpj"></span></div>
+                    <div><strong>Colaborador:</strong><br><span id="det-colaborador"></span></div>
+                    <div><strong>CPF:</strong><br><span id="det-cpf"></span></div>
+                    <div><strong>Código Vale:</strong><br><span id="det-codigo-vale"></span></div>
+                    <div><strong>Mês Referência:</strong><br><span id="det-mes-ref"></span></div>
+                    <div><strong>Valor:</strong><br><span id="det-valor" style="font-size:18px;font-weight:600;color:var(--success)"></span></div>
+                    <div><strong>Status:</strong><br><span id="det-status"></span></div>
+                </div>
+                <div style="margin-bottom:20px">
+                    <strong>Dados Bancários:</strong>
+                    <div style="background:var(--gray-50);padding:12px;border-radius:8px;margin-top:8px">
+                        <span id="det-banco"></span> | Ag: <span id="det-agencia"></span> | Conta: <span id="det-conta"></span> (<span id="det-tipo-conta"></span>)<br>
+                        PIX: <span id="det-pix"></span>
+                    </div>
+                </div>
+                <div id="det-observacoes-container" style="display:none;margin-bottom:20px">
+                    <strong>Observações:</strong>
+                    <p id="det-observacoes" style="background:var(--gray-50);padding:12px;border-radius:8px;margin-top:8px"></p>
+                </div>
+
+                <!-- Seção de Documentos/NF -->
+                <div style="margin-bottom:20px">
+                    <strong>Documentos:</strong>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px">
+                        <!-- Nota Fiscal -->
+                        <div style="background:var(--gray-50);padding:12px;border-radius:8px;border:1px dashed var(--border-color)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <span style="font-weight:500;font-size:13px">Nota Fiscal</span>
+                                <span id="det-nf-status" class="badge badge-warning">Pendente</span>
+                            </div>
+                            <div id="det-nf-preview" style="display:none;margin-bottom:8px">
+                                <a id="det-nf-link" href="#" target="_blank" class="btn btn-sm btn-outline" style="width:100%">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    Ver Arquivo
+                                </a>
+                            </div>
+                            <div id="det-nf-upload">
+                                <input type="file" id="uploadNF" accept=".pdf,.jpg,.jpeg,.png,.xml" style="display:none" onchange="uploadArquivoReembolso('nf')">
+                                <button type="button" class="btn btn-sm btn-primary" style="width:100%" onclick="document.getElementById('uploadNF').click()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                    Anexar NF
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Recibo -->
+                        <div style="background:var(--gray-50);padding:12px;border-radius:8px;border:1px dashed var(--border-color)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                                <span style="font-weight:500;font-size:13px">Recibo</span>
+                                <span id="det-recibo-status" class="badge badge-warning">Pendente</span>
+                            </div>
+                            <div id="det-recibo-preview" style="display:none;margin-bottom:8px">
+                                <a id="det-recibo-link" href="#" target="_blank" class="btn btn-sm btn-outline" style="width:100%">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    Ver Arquivo
+                                </a>
+                            </div>
+                            <div id="det-recibo-upload">
+                                <input type="file" id="uploadRecibo" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="uploadArquivoReembolso('recibo')">
+                                <button type="button" class="btn btn-sm btn-outline" style="width:100%" onclick="document.getElementById('uploadRecibo').click()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                    Anexar Recibo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="acoesReembolso">
+                <button type="button" class="btn btn-outline" onclick="closeModal('reembolso')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Aprovar Reembolso -->
+    <div id="modalAprovarReembolso" class="modal">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header" style="background:var(--success);color:white">
+                <h3 class="modal-title">Aprovar Reembolso</h3>
+                <button class="modal-close" onclick="closeModal('aprovarReembolso')" style="color:white">&times;</button>
+            </div>
+            <form onsubmit="confirmarAprovacao(event)">
+                <div class="modal-body">
+                    <p style="margin-bottom:16px">Você está prestes a aprovar este reembolso. Após a aprovação, ele ficará pendente de pagamento.</p>
+                    <div class="form-group">
+                        <label>Observações (opcional)</label>
+                        <textarea id="aprovar-observacoes" class="form-control" rows="3" placeholder="Adicione observações..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('aprovarReembolso')">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Aprovar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Rejeitar Reembolso -->
+    <div id="modalRejeitarReembolso" class="modal">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header" style="background:var(--danger);color:white">
+                <h3 class="modal-title">Rejeitar Reembolso</h3>
+                <button class="modal-close" onclick="closeModal('rejeitarReembolso')" style="color:white">&times;</button>
+            </div>
+            <form onsubmit="confirmarRejeicao(event)">
+                <div class="modal-body">
+                    <p style="margin-bottom:16px;color:var(--danger)">Esta ação registrará o motivo da rejeição.</p>
+                    <div class="form-group">
+                        <label>Motivo da Rejeição *</label>
+                        <textarea id="rejeitar-motivo" class="form-control" rows="4" placeholder="Descreva o motivo..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('rejeitarReembolso')">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Rejeitar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Marcar Pago -->
+    <div id="modalMarcarPago" class="modal">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header" style="background:var(--success);color:white">
+                <h3 class="modal-title">Marcar como Pago</h3>
+                <button class="modal-close" onclick="closeModal('marcarPago')" style="color:white">&times;</button>
+            </div>
+            <form onsubmit="confirmarPagamento(event)">
+                <div class="modal-body">
+                    <p style="margin-bottom:16px">Confirme que o pagamento foi realizado.</p>
+                    <div class="form-group">
+                        <label>Observações (opcional)</label>
+                        <textarea id="pago-observacoes" class="form-control" rows="3" placeholder="Ex: Pago via PIX..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('marcarPago')">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Novo Reembolso -->
+    <div id="modalNovoReembolso" class="modal">
+        <div class="modal-content" style="max-width:800px">
+            <div class="modal-header">
+                <h3 class="modal-title">Criar Reembolso</h3>
+                <button class="modal-close" onclick="closeModal('novoReembolso')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:var(--text-secondary)">Selecione um distribuidor externo para ver os vales pendentes de reembolso.</p>
+                <div class="form-group">
+                    <label>Distribuidor Externo *</label>
+                    <select id="novo-reembolso-distribuidor" class="form-control" onchange="carregarValesPendentes()">
+                        <option value="">Selecione um distribuidor...</option>
+                    </select>
+                </div>
+                <div id="vales-pendentes-container" style="display:none;margin-top:20px">
+                    <h4 style="margin-bottom:12px">Vales Pendentes de Reembolso</h4>
+                    <div id="tabela-vales-pendentes"></div>
+                    <div id="resumo-selecao" style="display:none;margin-top:16px;padding:12px;background:var(--gray-50);border-radius:8px">
+                        <span><strong id="qtd-vales-selecionados">0</strong> vale(s) selecionado(s)</span>
+                        <span style="float:right;font-weight:600;color:var(--success)">Total: R$ <span id="total-reembolso">0,00</span></span>
+                    </div>
+                    <div class="form-group" style="margin-top:16px">
+                        <label>Observações (opcional)</label>
+                        <textarea id="novo-observacoes" class="form-control" rows="2" placeholder="Observações..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('novoReembolso')">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-criar-reembolsos" onclick="criarReembolsosSelecionados()" disabled>Criar Reembolso(s)</button>
+            </div>
+        </div>
+    </div>
+
 <script>
 const API='/api';
 let token=localStorage.getItem('token'),user=JSON.parse(localStorage.getItem('usuario')||'{}');
@@ -961,6 +1528,22 @@ function updateThemeIcon(theme){
     document.getElementById('iconLua').style.display = theme === 'dark' ? 'none' : 'block';
 }
 
+// Sidebar Toggle
+function toggleSidebar(){
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+}
+
+function initSidebar(){
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if(isCollapsed){
+        document.getElementById('sidebar').classList.add('collapsed');
+    }
+}
+
+initSidebar();
 initTheme();
 
 const hoje=new Date(),mesAtual=`${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
@@ -990,11 +1573,8 @@ document.querySelectorAll('.sidebar-menu a').forEach(a=>a.onclick=e=>{
     if(a.dataset.section==='distribuidores')loadDists();
     if(a.dataset.section==='vales')loadVales();
     if(a.dataset.section==='reembolsos'){
-        if(typeof carregarReembolsos === 'function'){
-            carregarReembolsos(1);
-            carregarEstatisticasReembolsos();
-            carregarDistribuidoresFiltro();
-        }
+        loadReembolsos();
+        carregarDistribuidoresFiltro();
     }
     if(a.dataset.section==='solicitacoes')loadSolic();
     if(a.dataset.section==='usuarios'){loadUsuarios();loadSolicSenha();}
@@ -1031,6 +1611,7 @@ async function loadDash(){
 
 // Variáveis para armazenar instâncias dos gráficos
 let chartRetiradas, chartStatus, chartTaxa, chartDistribuidores;
+let chartReembolsosMes, chartReembolsosStatus, chartReembolsosValor, chartReembolsosDist;
 
 async function loadDashCharts(){
     const d = await api('/admin/dashboard/graficos');
@@ -1136,6 +1717,130 @@ async function loadDashCharts(){
             plugins: { legend: { display: false } },
             scales: {
                 x: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+
+    // Carregar gráficos de reembolsos
+    loadReembolsosCharts();
+}
+
+// Gráficos de Reembolsos
+async function loadReembolsosCharts(){
+    const d = await api('/admin/reembolsos/dashboard/graficos');
+    if(!d || !d.dados) return;
+    const g = d.dados;
+
+    // Destruir gráficos existentes
+    if(chartReembolsosMes) chartReembolsosMes.destroy();
+    if(chartReembolsosStatus) chartReembolsosStatus.destroy();
+    if(chartReembolsosValor) chartReembolsosValor.destroy();
+    if(chartReembolsosDist) chartReembolsosDist.destroy();
+
+    // Gráfico 1: Reembolsos por Mês (Barras)
+    const ctxMes = document.getElementById('chartReembolsosMes').getContext('2d');
+    chartReembolsosMes = new Chart(ctxMes, {
+        type: 'bar',
+        data: {
+            labels: g.reembolsos_por_mes.map(m => m.mes_nome),
+            datasets: [{
+                label: 'Reembolsos',
+                data: g.reembolsos_por_mes.map(m => m.total),
+                backgroundColor: 'rgba(220, 62, 49, 0.8)',
+                borderColor: '#DC3E31',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
+    });
+
+    // Gráfico 2: Status dos Reembolsos (Pizza)
+    const ctxStatus = document.getElementById('chartReembolsosStatus').getContext('2d');
+    chartReembolsosStatus = new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: ['A Validar', 'Aprovados', 'Pagos', 'Rejeitados'],
+            datasets: [{
+                data: [
+                    g.status_reembolsos.a_validar || 0,
+                    g.status_reembolsos.aprovado || 0,
+                    g.status_reembolsos.pago || 0,
+                    g.status_reembolsos.rejeitado || 0
+                ],
+                backgroundColor: ['#f59e0b', '#10b981', '#053462', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 20 } }
+            }
+        }
+    });
+
+    // Gráfico 3: Valor Total por Mês (Linha)
+    const ctxValor = document.getElementById('chartReembolsosValor').getContext('2d');
+    chartReembolsosValor = new Chart(ctxValor, {
+        type: 'line',
+        data: {
+            labels: g.valores_por_mes.map(m => m.mes_nome),
+            datasets: [{
+                label: 'Valor Total (R$)',
+                data: g.valores_por_mes.map(m => m.valor),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#10b981',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') }
+                }
+            }
+        }
+    });
+
+    // Gráfico 4: Top Distribuidores por Reembolso (Barras Horizontais)
+    const ctxDist = document.getElementById('chartReembolsosDist').getContext('2d');
+    chartReembolsosDist = new Chart(ctxDist, {
+        type: 'bar',
+        data: {
+            labels: g.top_distribuidores.map(d => d.nome.length > 20 ? d.nome.substring(0,20)+'...' : d.nome),
+            datasets: [{
+                label: 'Valor (R$)',
+                data: g.top_distribuidores.map(d => d.valor_total),
+                backgroundColor: ['#DC3E31', '#e85a4f', '#ef7b72', '#f69b95', '#fdbbb8'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') }
+                }
             }
         }
     });
@@ -1729,11 +2434,32 @@ function openModal(t){
     document.getElementById(t==='colab'?'cId':'dId').value='';
     document.getElementById('modal'+(t==='colab'?'Colab':'Dist')+'T').textContent='Novo '+(t==='colab'?'Colaborador':'Distribuidor');
     document.getElementById(t==='colab'?'senhaGerada':'senhaDist').style.display='none';
+    // Mostrar dados bancários se for distribuidor (padrão é externo)
+    if(t==='dist') toggleDadosBancarios();
     document.getElementById('modal'+(t==='colab'?'Colab':'Dist')).classList.add('show');
 }
 function closeModal(t){
-    const modalMap = {'colab':'modalColab','dist':'modalDist','vales':'modalVales','usuario':'modalUsuario','senha':'modalSenha','importacao':'modalImportacao'};
+    const modalMap = {
+        'colab':'modalColab',
+        'dist':'modalDist',
+        'vales':'modalVales',
+        'usuario':'modalUsuario',
+        'senha':'modalSenha',
+        'importacao':'modalImportacao',
+        'reembolso':'modalReembolso',
+        'aprovarReembolso':'modalAprovarReembolso',
+        'rejeitarReembolso':'modalRejeitarReembolso',
+        'marcarPago':'modalMarcarPago',
+        'novoReembolso':'modalNovoReembolso',
+        'importDist':'modalImportDist'
+    };
     if(modalMap[t]) document.getElementById(modalMap[t]).classList.remove('show');
+}
+
+// Função genérica para abrir modais pelo ID
+function abrirModalPorId(modalId) {
+    const modal = document.getElementById(modalId);
+    if(modal) modal.classList.add('show');
 }
 
 // Função para exibir modal de senha (substitui alert)
@@ -1775,6 +2501,12 @@ async function editColab(id){
     document.getElementById('modalColab').classList.add('show');
 }
 
+// Toggle dados bancários baseado no tipo de distribuidor
+function toggleDadosBancarios() {
+    const tipo = document.getElementById('dTipo').value;
+    document.getElementById('dadosBancarios').style.display = tipo === 'externo' ? 'block' : 'none';
+}
+
 // Edit Distribuidor
 async function editDist(id){
     const d=await api(`/admin/distribuidores/${id}`);
@@ -1795,6 +2527,13 @@ async function editDist(id){
     document.getElementById('dBairro').value=x.bairro;
     document.getElementById('dCidade').value=x.cidade;
     document.getElementById('dUF').value=x.estado;
+    // Dados bancários
+    document.getElementById('dBanco').value=x.banco||'';
+    document.getElementById('dAgencia').value=x.agencia||'';
+    document.getElementById('dConta').value=x.conta||'';
+    document.getElementById('dTipoConta').value=x.tipo_conta||'';
+    document.getElementById('dPix').value=x.pix||'';
+    toggleDadosBancarios();
     document.getElementById('modalDistT').textContent='Editar Distribuidor';
     document.getElementById('senhaDist').style.display='none';
     document.getElementById('modalDist').classList.add('show');
@@ -1840,6 +2579,7 @@ document.getElementById('formColab').onsubmit=async e=>{
 document.getElementById('formDist').onsubmit=async e=>{
     e.preventDefault();
     const id=document.getElementById('dId').value;
+    const tipo=document.getElementById('dTipo').value;
     const dados={
         nome:document.getElementById('dNome').value,
         cnpj:document.getElementById('dCnpj').value.replace(/\D/g,''),
@@ -1847,7 +2587,7 @@ document.getElementById('formDist').onsubmit=async e=>{
         telefone:document.getElementById('dTel').value,
         responsavel:document.getElementById('dResp').value,
         horario_funcionamento:document.getElementById('dHor').value,
-        tipo_distribuidor:document.getElementById('dTipo').value,
+        tipo_distribuidor:tipo,
         cep:document.getElementById('dCep').value,
         logradouro:document.getElementById('dLog').value,
         numero:document.getElementById('dNum').value,
@@ -1856,6 +2596,14 @@ document.getElementById('formDist').onsubmit=async e=>{
         cidade:document.getElementById('dCidade').value,
         estado:document.getElementById('dUF').value.toUpperCase()
     };
+    // Adicionar dados bancários se for distribuidor externo
+    if(tipo === 'externo'){
+        dados.banco = document.getElementById('dBanco').value;
+        dados.agencia = document.getElementById('dAgencia').value;
+        dados.conta = document.getElementById('dConta').value;
+        dados.tipo_conta = document.getElementById('dTipoConta').value;
+        dados.pix = document.getElementById('dPix').value;
+    }
     const d=await api(id?`/admin/distribuidores/${id}`:'/admin/distribuidores',{method:id?'PUT':'POST',body:JSON.stringify(dados)});
     if(d&&(d.sucesso||d.id)){
         if(!id && d.senha_temporaria){
@@ -2308,7 +3056,7 @@ function exportarSenhasImportadas(){
         alert('Nenhuma senha para exportar');
         return;
     }
-    
+
     const ws = XLSX.utils.json_to_sheet(window.senhasImportadas.map(s => ({
         'Nome': s.nome,
         'CPF': s.cpf,
@@ -2318,6 +3066,256 @@ function exportarSenhasImportadas(){
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Senhas');
     XLSX.writeFile(wb, `senhas_importacao_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ==================== IMPORTAÇÃO DE DISTRIBUIDORES ====================
+let dadosImportacaoDist = [];
+
+function abrirModalImportarDist(){
+    document.getElementById('importDistEtapa1').style.display = 'block';
+    document.getElementById('importDistEtapa2').style.display = 'none';
+    document.getElementById('importDistEtapa3').style.display = 'none';
+    document.getElementById('btnConfirmarImportDist').style.display = 'none';
+    document.getElementById('arquivoImportDist').value = '';
+    dadosImportacaoDist = [];
+
+    document.getElementById('modalImportDist').classList.add('show');
+}
+
+function baixarModeloImportDist(){
+    const modelo = [
+        {
+            nome: 'Distribuidora Exemplo',
+            cnpj: '12345678000199',
+            email: 'contato@distribuidora.com',
+            telefone: '11999998888',
+            responsavel: 'José da Silva',
+            cidade: 'São Paulo',
+            estado: 'SP',
+            tipo_distribuidor: 'externo'
+        },
+        {
+            nome: 'Gas Center LTDA',
+            cnpj: '98765432000188',
+            email: 'gascenter@email.com',
+            telefone: '11988887777',
+            responsavel: 'Maria Santos',
+            cidade: 'Campinas',
+            estado: 'SP',
+            tipo_distribuidor: 'interno'
+        }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(modelo);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Distribuidores');
+
+    ws['!cols'] = [
+        {wch: 30}, {wch: 18}, {wch: 30}, {wch: 14},
+        {wch: 25}, {wch: 20}, {wch: 5}, {wch: 12}
+    ];
+
+    XLSX.writeFile(wb, 'modelo_importacao_distribuidores.xlsx');
+}
+
+async function processarArquivoImportDist(input){
+    const file = input.files[0];
+    if(!file) return;
+
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+        if(!jsonData.length){
+            alert('Arquivo vazio ou formato inválido!');
+            return;
+        }
+
+        const camposObrigatorios = ['nome', 'cnpj', 'email', 'telefone', 'responsavel', 'cidade', 'estado'];
+        const erros = [];
+        const validos = [];
+
+        jsonData.forEach((row, idx) => {
+            const linha = idx + 2;
+            const errosLinha = [];
+
+            camposObrigatorios.forEach(campo => {
+                if(!row[campo] || String(row[campo]).trim() === ''){
+                    errosLinha.push(`${campo} vazio`);
+                }
+            });
+
+            // Validar CNPJ (apenas números, 14 dígitos)
+            if(row.cnpj){
+                const cnpjLimpo = String(row.cnpj).replace(/\D/g, '');
+                if(cnpjLimpo.length !== 14){
+                    errosLinha.push('CNPJ inválido (deve ter 14 dígitos)');
+                }
+                row.cnpj = cnpjLimpo;
+            }
+
+            // Validar email
+            if(row.email && !row.email.includes('@')){
+                errosLinha.push('Email inválido');
+            }
+
+            // Validar estado (2 letras)
+            if(row.estado && row.estado.length !== 2){
+                errosLinha.push('Estado deve ter 2 letras');
+            }
+
+            // Formatar telefone
+            if(row.telefone){
+                row.telefone = String(row.telefone).replace(/\D/g, '');
+            }
+
+            // Validar tipo_distribuidor
+            if(row.tipo_distribuidor && !['interno', 'externo'].includes(row.tipo_distribuidor.toLowerCase())){
+                errosLinha.push('tipo_distribuidor deve ser "interno" ou "externo"');
+            } else if(row.tipo_distribuidor){
+                row.tipo_distribuidor = row.tipo_distribuidor.toLowerCase();
+            } else {
+                row.tipo_distribuidor = 'externo'; // padrão
+            }
+
+            if(errosLinha.length > 0){
+                erros.push({ linha, erros: errosLinha, dados: row });
+            } else {
+                validos.push(row);
+            }
+        });
+
+        dadosImportacaoDist = validos;
+
+        document.getElementById('importDistEtapa1').style.display = 'none';
+        document.getElementById('importDistEtapa2').style.display = 'block';
+
+        document.getElementById('importDistResumo').innerHTML = `
+            <div style="display:flex;gap:16px;margin-bottom:16px">
+                <div style="background:#d1fae5;padding:12px 20px;border-radius:8px;flex:1;text-align:center">
+                    <p style="font-size:24px;font-weight:700;color:#059669">${validos.length}</p>
+                    <p style="font-size:12px;color:#059669">Válidos</p>
+                </div>
+                <div style="background:${erros.length ? '#fee2e2' : '#f3f4f6'};padding:12px 20px;border-radius:8px;flex:1;text-align:center">
+                    <p style="font-size:24px;font-weight:700;color:${erros.length ? '#dc2626' : '#6b7280'}">${erros.length}</p>
+                    <p style="font-size:12px;color:${erros.length ? '#dc2626' : '#6b7280'}">Com erros</p>
+                </div>
+            </div>
+            ${erros.length ? `
+                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px">
+                    <p style="font-size:13px;font-weight:600;color:#dc2626;margin-bottom:8px">⚠️ Linhas com erro (serão ignoradas):</p>
+                    ${erros.slice(0, 5).map(e => `<p style="font-size:12px;color:#dc2626">Linha ${e.linha}: ${e.erros.join(', ')}</p>`).join('')}
+                    ${erros.length > 5 ? `<p style="font-size:12px;color:#dc2626">... e mais ${erros.length - 5} erros</p>` : ''}
+                </div>
+            ` : ''}
+        `;
+
+        if(validos.length > 0){
+            document.getElementById('importDistPreview').innerHTML = `
+                <thead><tr><th>Nome</th><th>CNPJ</th><th>Email</th><th>Tipo</th></tr></thead>
+                <tbody>${validos.slice(0, 20).map(v => `
+                    <tr>
+                        <td>${v.nome}</td>
+                        <td>${formatCNPJ(v.cnpj)}</td>
+                        <td>${v.email}</td>
+                        <td><span class="badge ${v.tipo_distribuidor === 'interno' ? 'badge-info' : 'badge-success'}">${v.tipo_distribuidor}</span></td>
+                    </tr>`).join('')}
+                    ${validos.length > 20 ? `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary)">... e mais ${validos.length - 20} distribuidores</td></tr>` : ''}
+                </tbody>
+            `;
+            document.getElementById('btnConfirmarImportDist').style.display = 'inline-flex';
+        } else {
+            document.getElementById('importDistPreview').innerHTML = '<tr><td style="padding:20px;text-align:center;color:var(--danger)">Nenhum registro válido para importar</td></tr>';
+        }
+
+    } catch(err){
+        console.error(err);
+        alert('Erro ao processar arquivo: ' + err.message);
+    }
+}
+
+async function confirmarImportDist(){
+    if(!dadosImportacaoDist.length){
+        alert('Nenhum dado para importar!');
+        return;
+    }
+
+    if(!confirm(`Confirma a importação de ${dadosImportacaoDist.length} distribuidores?\n\nSenhas serão geradas automaticamente.`)) return;
+
+    document.getElementById('btnConfirmarImportDist').disabled = true;
+    document.getElementById('btnConfirmarImportDist').textContent = 'Importando...';
+
+    const d = await api('/admin/distribuidores/importar', {
+        method: 'POST',
+        body: JSON.stringify({ distribuidores: dadosImportacaoDist })
+    });
+
+    document.getElementById('importDistEtapa2').style.display = 'none';
+    document.getElementById('importDistEtapa3').style.display = 'block';
+    document.getElementById('btnConfirmarImportDist').style.display = 'none';
+
+    if(d && d.sucesso){
+        document.getElementById('importDistResultado').innerHTML = `
+            <div style="text-align:center;padding:20px">
+                <div style="width:64px;height:64px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h3 style="color:#059669;margin-bottom:8px">Importação Concluída!</h3>
+                <p style="color:var(--text-secondary);margin-bottom:24px">${d.importados} distribuidores importados com sucesso.</p>
+                ${d.erros && d.erros.length ? `
+                    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;text-align:left;margin-bottom:16px">
+                        <p style="font-size:13px;font-weight:600;color:#dc2626;margin-bottom:8px">${d.erros.length} erros durante a importação:</p>
+                        ${d.erros.slice(0, 5).map(e => `<p style="font-size:12px;color:#dc2626">• ${e}</p>`).join('')}
+                    </div>
+                ` : ''}
+                ${d.senhas && d.senhas.length ? `
+                    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;text-align:left">
+                        <p style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px">⚠️ Senhas geradas (anote-as!):</p>
+                        <div style="max-height:150px;overflow-y:auto">
+                            ${d.senhas.map(s => `<p style="font-size:12px;font-family:monospace">${s.nome}: <strong>${s.senha}</strong></p>`).join('')}
+                        </div>
+                        <button class="btn btn-sm btn-outline" style="margin-top:12px" onclick="exportarSenhasDistImportados()">Exportar Senhas (Excel)</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        if(d.senhas) window.senhasDistImportados = d.senhas;
+
+        loadDists();
+    } else {
+        document.getElementById('importDistResultado').innerHTML = `
+            <div style="text-align:center;padding:20px">
+                <div style="width:64px;height:64px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <h3 style="color:#dc2626;margin-bottom:8px">Erro na Importação</h3>
+                <p style="color:var(--text-secondary)">${d?.erro || 'Erro desconhecido'}</p>
+            </div>
+        `;
+    }
+
+    document.getElementById('btnConfirmarImportDist').disabled = false;
+    document.getElementById('btnConfirmarImportDist').textContent = 'Importar Distribuidores';
+}
+
+function exportarSenhasDistImportados(){
+    if(!window.senhasDistImportados || !window.senhasDistImportados.length){
+        alert('Nenhuma senha para exportar');
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(window.senhasDistImportados.map(s => ({
+        'Nome': s.nome,
+        'CNPJ': s.cnpj,
+        'Email': s.email,
+        'Senha': s.senha
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Senhas');
+    XLSX.writeFile(wb, `senhas_distribuidores_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 // ==================== NOTIFICAÇÕES / WEBHOOKS ====================
@@ -2506,6 +3504,48 @@ async function salvarConfiguracoes(){
 // ==================== AUDITORIA ====================
 let auditoriaPagina = 1;
 
+// Mapeamento de cores por categoria de ação
+const acaoIcons = {
+    // Login
+    login: { icon: '🔑', cor: '#22c55e' },
+    logout: { icon: '🚪', cor: '#64748b' },
+    login_falha: { icon: '🚫', cor: '#ef4444' },
+    // Colaboradores
+    criar_colaborador: { icon: '👤', cor: '#3b82f6' },
+    editar_colaborador: { icon: '✏️', cor: '#f59e0b' },
+    ativar_colaborador: { icon: '✅', cor: '#22c55e' },
+    desativar_colaborador: { icon: '❌', cor: '#ef4444' },
+    resetar_senha_colaborador: { icon: '🔐', cor: '#8b5cf6' },
+    // Distribuidores
+    criar_distribuidor: { icon: '🏪', cor: '#3b82f6' },
+    editar_distribuidor: { icon: '✏️', cor: '#f59e0b' },
+    ativar_distribuidor: { icon: '✅', cor: '#22c55e' },
+    desativar_distribuidor: { icon: '❌', cor: '#ef4444' },
+    resetar_senha_distribuidor: { icon: '🔐', cor: '#8b5cf6' },
+    // Vales
+    gerar_vale: { icon: '🎫', cor: '#3b82f6' },
+    gerar_vales_mensal: { icon: '📋', cor: '#0ea5e9' },
+    validar_vale: { icon: '🔍', cor: '#64748b' },
+    confirmar_retirada: { icon: '✅', cor: '#22c55e' },
+    // Reembolsos
+    criar_reembolso: { icon: '💰', cor: '#3b82f6' },
+    aprovar_reembolso: { icon: '✅', cor: '#22c55e' },
+    rejeitar_reembolso: { icon: '❌', cor: '#ef4444' },
+    pagar_reembolso: { icon: '💵', cor: '#10b981' },
+    editar_reembolso: { icon: '✏️', cor: '#f59e0b' },
+    excluir_reembolso: { icon: '🗑️', cor: '#ef4444' },
+    upload_documento: { icon: '📎', cor: '#8b5cf6' },
+    // Usuários
+    criar_usuario: { icon: '👔', cor: '#3b82f6' },
+    editar_usuario: { icon: '✏️', cor: '#f59e0b' },
+    ativar_usuario: { icon: '✅', cor: '#22c55e' },
+    desativar_usuario: { icon: '❌', cor: '#ef4444' },
+    // Sistema
+    alterar_configuracao: { icon: '⚙️', cor: '#64748b' },
+    aprovar_solicitacao: { icon: '✅', cor: '#22c55e' },
+    rejeitar_solicitacao: { icon: '❌', cor: '#ef4444' }
+};
+
 async function loadAuditoria(pagina = 1){
     auditoriaPagina = pagina;
     const dataIni = document.getElementById('auditDataIni').value;
@@ -2513,39 +3553,61 @@ async function loadAuditoria(pagina = 1){
     const tipoUsuario = document.getElementById('auditTipoUsuario').value;
     const acao = document.getElementById('auditAcao').value;
     const busca = document.getElementById('auditBusca').value;
-    
+
     let url = `/admin/auditoria?pagina=${pagina}&limite=30`;
     if(dataIni) url += `&data_inicio=${dataIni}`;
     if(dataFim) url += `&data_fim=${dataFim}`;
     if(tipoUsuario) url += `&tipo_usuario=${tipoUsuario}`;
     if(acao) url += `&acao=${acao}`;
     if(busca) url += `&busca=${encodeURIComponent(busca)}`;
-    
+
     const d = await api(url);
     if(!d || !d.dados){
         document.getElementById('tableAuditoria').innerHTML = '<div class="empty-state"><p>Nenhum registro encontrado</p></div>';
         document.getElementById('paginacaoAuditoria').innerHTML = '';
+        document.getElementById('auditTotal').textContent = '';
         return;
     }
-    
+
+    // Atualizar total
+    document.getElementById('auditTotal').textContent = `${d.paginacao.total} registros encontrados`;
+
     const tipoBadge = {'admin':'badge-danger','colaborador':'badge-success','distribuidor':'badge-info'};
-    
+    const tipoNome = {'admin':'RH/Admin','colaborador':'Colaborador','distribuidor':'Distribuidor'};
+
     document.getElementById('tableAuditoria').innerHTML = d.dados.length ? `
         <table>
-            <thead><tr><th style="width:140px">Data/Hora</th><th>Usuário</th><th>Tipo</th><th>Ação</th><th>Detalhes</th><th>IP</th></tr></thead>
-            <tbody>${d.dados.map(l => `
+            <thead><tr>
+                <th style="width:150px">Data/Hora</th>
+                <th>Usuário</th>
+                <th style="width:100px">Tipo</th>
+                <th>Ação</th>
+                <th>Detalhes</th>
+                <th style="width:100px">IP</th>
+            </tr></thead>
+            <tbody>${d.dados.map(l => {
+                const acaoInfo = acaoIcons[l.acao] || { icon: '📝', cor: '#64748b' };
+                return `
                 <tr>
-                    <td style="font-size:12px">${new Date(l.criado_em).toLocaleString('pt-BR')}</td>
+                    <td style="font-size:12px;white-space:nowrap">
+                        <div style="color:var(--text-primary)">${new Date(l.criado_em).toLocaleDateString('pt-BR')}</div>
+                        <div style="color:var(--text-secondary);font-size:11px">${new Date(l.criado_em).toLocaleTimeString('pt-BR')}</div>
+                    </td>
                     <td><strong>${l.usuario_nome}</strong></td>
-                    <td><span class="badge ${tipoBadge[l.tipo_usuario]}">${l.tipo_usuario}</span></td>
-                    <td>${l.acao_descricao || l.acao}</td>
+                    <td><span class="badge ${tipoBadge[l.tipo_usuario]}">${tipoNome[l.tipo_usuario] || l.tipo_usuario}</span></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span style="font-size:16px">${acaoInfo.icon}</span>
+                            <span style="color:${acaoInfo.cor};font-weight:500">${l.acao_descricao || l.acao}</span>
+                        </div>
+                    </td>
                     <td style="font-size:12px;color:var(--text-secondary)">${formatDetalhes(l)}</td>
-                    <td style="font-size:11px;color:var(--gray-400)">${l.ip || '-'}</td>
-                </tr>`).join('')}
+                    <td style="font-size:11px;color:var(--gray-400);font-family:monospace">${l.ip || '-'}</td>
+                </tr>`}).join('')}
             </tbody>
         </table>
     ` : '<div class="empty-state"><p>Nenhum registro encontrado</p></div>';
-    
+
     // Paginação
     const pg = d.paginacao;
     if(pg.total_paginas > 1){
@@ -2557,18 +3619,77 @@ async function loadAuditoria(pagina = 1){
     } else {
         document.getElementById('paginacaoAuditoria').innerHTML = '';
     }
+
+    // Carregar estatísticas
+    loadAuditoriaStats();
+}
+
+async function loadAuditoriaStats(){
+    try {
+        const d = await api('/admin/auditoria/estatisticas');
+        if(!d || !d.dados) return;
+
+        // Ações hoje
+        const hoje = new Date().toISOString().split('T')[0];
+        const acoesHoje = d.dados.acoes_por_dia.find(a => a.data === hoje);
+        document.getElementById('auditHoje').textContent = acoesHoje ? acoesHoje.total : '0';
+
+        // Logins (soma dos últimos 7 dias)
+        const totalLogins = d.dados.logins_por_tipo.reduce((acc, l) => acc + l.total, 0);
+        document.getElementById('auditLogins').textContent = totalLogins;
+
+        // Reembolsos processados
+        const reembAcoes = ['aprovar_reembolso', 'pagar_reembolso', 'rejeitar_reembolso'];
+        const totalReemb = d.dados.acoes_por_tipo.filter(a => reembAcoes.includes(a.acao)).reduce((acc, a) => acc + a.total, 0);
+        document.getElementById('auditReembolsos').textContent = totalReemb;
+
+        // Vales gerados
+        const valesAcoes = ['gerar_vale', 'gerar_vales_mensal'];
+        const totalVales = d.dados.acoes_por_tipo.filter(a => valesAcoes.includes(a.acao)).reduce((acc, a) => acc + a.total, 0);
+        document.getElementById('auditVales').textContent = totalVales;
+
+    } catch(e) {
+        console.error('Erro ao carregar estatísticas de auditoria:', e);
+    }
+}
+
+function limparFiltrosAuditoria(){
+    document.getElementById('auditDataIni').value = '';
+    document.getElementById('auditDataFim').value = '';
+    document.getElementById('auditTipoUsuario').value = '';
+    document.getElementById('auditAcao').value = '';
+    document.getElementById('auditBusca').value = '';
+    loadAuditoria(1);
 }
 
 function formatDetalhes(log){
     if(!log.detalhes) {
-        if(log.entidade && log.entidade_id) return `${log.entidade} #${log.entidade_id}`;
+        if(log.entidade && log.entidade_id) return `<code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px">${log.entidade} #${log.entidade_id}</code>`;
         return '-';
     }
     const d = log.detalhes;
+
+    // Nome do colaborador/distribuidor
     if(d.nome) return d.nome;
-    if(d.motivo) return d.motivo;
-    if(d.gerados) return `${d.gerados} vales gerados`;
-    return JSON.stringify(d).substring(0, 50);
+
+    // Motivo de rejeição
+    if(d.motivo) return `<span style="color:var(--danger)">${d.motivo}</span>`;
+
+    // Vales gerados
+    if(d.gerados) return `<span style="color:var(--success)">${d.gerados} vales gerados</span>`;
+
+    // Valor de reembolso
+    if(d.valor) return `<span style="color:var(--primary)">R$ ${parseFloat(d.valor).toFixed(2)}</span>`;
+
+    // Arquivos
+    if(d.arquivos) return `<span style="color:var(--info)">Arquivos: ${d.arquivos.join(', ')}</span>`;
+
+    // Vale e colaborador
+    if(d.vale_id) return `<code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px">Vale #${d.vale_id}</code>`;
+
+    // Genérico
+    const str = JSON.stringify(d);
+    return str.length > 60 ? str.substring(0, 60) + '...' : str;
 }
 
 // Masks
@@ -2586,27 +3707,441 @@ document.getElementById('dCnpj').addEventListener('input',function(e){
 // Init
 loadDash();
 
-// Carregar seção de reembolsos dinamicamente
-fetch('/reembolsos-section.html')
-    .then(r => r.text())
-    .then(html => {
-        document.getElementById('s-reembolsos').innerHTML = html;
+// ========================================
+// GESTÃO DE REEMBOLSOS
+// ========================================
+let reembolsoAtual = null;
+let valesPendentesLista = [];
+let valesSelecionados = new Set();
 
-        // Carregar o script após o HTML estar inserido
-        const script = document.createElement('script');
-        script.src = '/reembolsos-script.js';
-        script.onload = () => {
-            console.log('✅ Script de reembolsos carregado');
-            // Inicializar se a seção de reembolsos estiver ativa
-            if(document.getElementById('s-reembolsos').classList.contains('active')) {
-                carregarReembolsos(1);
-                carregarEstatisticasReembolsos();
-                carregarDistribuidoresFiltro();
-            }
-        };
-        document.body.appendChild(script);
-    })
-    .catch(err => console.error('Erro ao carregar seção de reembolsos:', err));
+function formatarMesRef(mesRef) {
+    if (!mesRef) return '-';
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const partes = mesRef.split('-');
+    if (partes.length !== 2) return mesRef;
+    return `${meses[parseInt(partes[1]) - 1]}/${partes[0]}`;
+}
+
+function badgeStatus(status) {
+    const b = {'a_validar':'badge-warning','aprovado':'badge-info','pago':'badge-success','rejeitado':'badge-danger'};
+    const t = {'a_validar':'A Validar','aprovado':'Aprovado','pago':'Pago','rejeitado':'Rejeitado'};
+    return `<span class="badge ${b[status]||'badge-secondary'}">${t[status]||status}</span>`;
+}
+
+async function loadReembolsos() {
+    const status = document.getElementById('filtro-status-reembolso')?.value || '';
+    const distribuidor = document.getElementById('filtro-distribuidor-reembolso')?.value || '';
+    const mes = document.getElementById('filtro-mes-reembolso')?.value || '';
+
+    const params = new URLSearchParams({limit: 100});
+    if(status) params.append('status', status);
+    if(distribuidor) params.append('distribuidor_id', distribuidor);
+    if(mes) params.append('mes_referencia', mes);
+
+    const d = await api(`/admin/reembolsos?${params}`);
+    if(!d) return;
+
+    // Atualizar estatísticas
+    if(d.stats) {
+        document.getElementById('reembolsos-a-validar').textContent = d.stats.a_validar || 0;
+        document.getElementById('reembolsos-aprovados').textContent = d.stats.aprovado || 0;
+        document.getElementById('reembolsos-pagos').textContent = d.stats.pago || 0;
+        document.getElementById('reembolsos-total').textContent = 'R$ ' + (parseFloat(d.stats.valor_aprovado) || 0).toFixed(2).replace('.', ',');
+    }
+
+    if(!d.data || d.data.length === 0) {
+        document.getElementById('tableReembolsos').innerHTML = '<div class="empty-state"><p>Nenhum reembolso encontrado</p></div>';
+        return;
+    }
+
+    document.getElementById('tableReembolsos').innerHTML = `
+        <table>
+            <thead><tr><th>ID</th><th>Distribuidor</th><th>Colaborador</th><th>Vale</th><th>Mês</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>${d.data.map(r => `
+                <tr>
+                    <td>${r.id}</td>
+                    <td><strong>${r.distribuidor_nome||'-'}</strong><br><small style="color:var(--text-secondary)">${r.distribuidor_cnpj||''}</small></td>
+                    <td><strong>${r.colaborador_nome||'-'}</strong><br><small style="color:var(--text-secondary)">${r.colaborador_cpf||''}</small></td>
+                    <td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px">${r.codigo_vale||'-'}</code></td>
+                    <td>${formatarMesRef(r.mes_referencia)}</td>
+                    <td style="font-weight:600;color:var(--success)">R$ ${parseFloat(r.valor).toFixed(2).replace('.', ',')}</td>
+                    <td>${badgeStatus(r.status)}</td>
+                    <td><button class="btn btn-sm btn-outline" onclick="verReembolso(${r.id})">Ver</button></td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+}
+
+async function carregarDistribuidoresFiltro() {
+    const d = await api('/admin/distribuidores?ativo=true&limite=1000');
+    if(d?.dados) {
+        const sel = document.getElementById('filtro-distribuidor-reembolso');
+        sel.innerHTML = '<option value="">Todos Distribuidores</option>' +
+            d.dados.map(x => `<option value="${x.id}">${x.nome}</option>`).join('');
+    }
+}
+
+function limparFiltrosReembolsos() {
+    document.getElementById('filtro-status-reembolso').value = '';
+    document.getElementById('filtro-distribuidor-reembolso').value = '';
+    document.getElementById('filtro-mes-reembolso').value = '';
+    loadReembolsos();
+}
+
+async function verReembolso(id) {
+    const d = await api(`/admin/reembolsos/${id}`);
+    if(!d?.data) return;
+
+    reembolsoAtual = d.data;
+    document.getElementById('det-reembolso-id').textContent = d.data.id;
+    document.getElementById('det-distribuidor').textContent = d.data.distribuidor_nome || '-';
+    document.getElementById('det-cnpj').textContent = d.data.distribuidor_cnpj || '-';
+    document.getElementById('det-colaborador').textContent = d.data.colaborador_nome || '-';
+    document.getElementById('det-cpf').textContent = d.data.colaborador_cpf || '-';
+    document.getElementById('det-codigo-vale').textContent = d.data.codigo_vale || '-';
+    document.getElementById('det-mes-ref').textContent = formatarMesRef(d.data.mes_referencia);
+    document.getElementById('det-valor').textContent = 'R$ ' + parseFloat(d.data.valor).toFixed(2).replace('.', ',');
+    document.getElementById('det-status').innerHTML = badgeStatus(d.data.status);
+    document.getElementById('det-banco').textContent = d.data.banco || '-';
+    document.getElementById('det-agencia').textContent = d.data.agencia || '-';
+    document.getElementById('det-conta').textContent = d.data.conta || '-';
+    document.getElementById('det-tipo-conta').textContent = d.data.tipo_conta || '-';
+    document.getElementById('det-pix').textContent = d.data.pix || '-';
+
+    if(d.data.observacoes) {
+        document.getElementById('det-observacoes').textContent = d.data.observacoes;
+        document.getElementById('det-observacoes-container').style.display = 'block';
+    } else {
+        document.getElementById('det-observacoes-container').style.display = 'none';
+    }
+
+    // Atualizar status dos documentos
+    atualizarStatusDocumento('nf', d.data.comprovante_nf);
+    atualizarStatusDocumento('recibo', d.data.comprovante_recibo);
+
+    // Botões de ação baseados no status
+    let acoes = '<button type="button" class="btn btn-outline" onclick="closeModal(\'reembolso\')">Fechar</button>';
+    if(d.data.status === 'a_validar') {
+        acoes += '<button type="button" class="btn btn-success" onclick="abrirModalAprovar()">Aprovar</button>';
+        acoes += '<button type="button" class="btn btn-danger" onclick="abrirModalRejeitar()">Rejeitar</button>';
+    } else if(d.data.status === 'aprovado') {
+        acoes += '<button type="button" class="btn btn-success" onclick="abrirModalMarcarPago()">Marcar Pago</button>';
+    }
+    document.getElementById('acoesReembolso').innerHTML = acoes;
+
+    abrirModalPorId('modalReembolso');
+}
+
+function abrirModalAprovar() {
+    // Verificar se há documentos anexados
+    if(!reembolsoAtual.comprovante_nf && !reembolsoAtual.comprovante_recibo) {
+        alert('É necessário anexar a Nota Fiscal ou Recibo antes de aprovar o reembolso.\n\nAnexe o documento na seção "Documentos" e tente novamente.');
+        return;
+    }
+    document.getElementById('aprovar-observacoes').value = '';
+    abrirModalPorId('modalAprovarReembolso');
+}
+
+function abrirModalRejeitar() {
+    document.getElementById('rejeitar-motivo').value = '';
+    abrirModalPorId('modalRejeitarReembolso');
+}
+
+function abrirModalMarcarPago() {
+    document.getElementById('pago-observacoes').value = '';
+    abrirModalPorId('modalMarcarPago');
+}
+
+// Funções para gerenciar documentos do reembolso
+function atualizarStatusDocumento(tipo, arquivo) {
+    const statusEl = document.getElementById(`det-${tipo}-status`);
+    const previewEl = document.getElementById(`det-${tipo}-preview`);
+    const linkEl = document.getElementById(`det-${tipo}-link`);
+
+    if(arquivo) {
+        statusEl.className = 'badge badge-success';
+        statusEl.textContent = 'Anexado';
+        previewEl.style.display = 'block';
+        linkEl.href = `/api/admin/reembolsos/${reembolsoAtual.id}/arquivo/${tipo}?token=${token}`;
+    } else {
+        statusEl.className = 'badge badge-warning';
+        statusEl.textContent = 'Pendente';
+        previewEl.style.display = 'none';
+    }
+}
+
+async function uploadArquivoReembolso(tipo) {
+    const inputId = tipo === 'nf' ? 'uploadNF' : 'uploadRecibo';
+    const input = document.getElementById(inputId);
+    const file = input.files[0];
+
+    if(!file || !reembolsoAtual) return;
+
+    // Validar tamanho (max 10MB)
+    if(file.size > 10 * 1024 * 1024) {
+        alert('Arquivo muito grande. Máximo: 10MB');
+        input.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append(tipo === 'nf' ? 'comprovante_nf' : 'comprovante_recibo', file);
+
+    try {
+        const response = await fetch(`${API}/admin/reembolsos/${reembolsoAtual.id}/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if(result.success) {
+            alert('Arquivo enviado com sucesso!');
+            // Atualizar visualização
+            atualizarStatusDocumento(tipo, file.name);
+            // Atualizar objeto local
+            if(tipo === 'nf') reembolsoAtual.comprovante_nf = result.arquivo;
+            else reembolsoAtual.comprovante_recibo = result.arquivo;
+        } else {
+            alert(result.error || 'Erro ao enviar arquivo');
+        }
+    } catch(err) {
+        alert('Erro ao enviar arquivo: ' + err.message);
+    }
+
+    input.value = '';
+}
+
+async function confirmarAprovacao(e) {
+    e.preventDefault();
+    if(!reembolsoAtual) return;
+
+    const d = await api(`/admin/reembolsos/${reembolsoAtual.id}/aprovar`, {
+        method: 'POST',
+        body: JSON.stringify({
+            observacoes: document.getElementById('aprovar-observacoes').value
+        })
+    });
+
+    if(d?.success) {
+        closeModal('aprovarReembolso');
+        closeModal('reembolso');
+        loadReembolsos();
+        alert('Reembolso aprovado com sucesso!');
+    } else {
+        alert(d?.error || 'Erro ao aprovar reembolso');
+    }
+}
+
+async function confirmarRejeicao(e) {
+    e.preventDefault();
+    if(!reembolsoAtual) return;
+
+    const motivo = document.getElementById('rejeitar-motivo').value;
+    if(!motivo.trim()) {
+        alert('Informe o motivo da rejeição');
+        return;
+    }
+
+    const d = await api(`/admin/reembolsos/${reembolsoAtual.id}/rejeitar`, {
+        method: 'POST',
+        body: JSON.stringify({
+            motivo_rejeicao: motivo
+        })
+    });
+
+    if(d?.success) {
+        closeModal('rejeitarReembolso');
+        closeModal('reembolso');
+        loadReembolsos();
+        alert('Reembolso rejeitado');
+    } else {
+        alert(d?.error || 'Erro ao rejeitar reembolso');
+    }
+}
+
+async function confirmarPagamento(e) {
+    e.preventDefault();
+    if(!reembolsoAtual) return;
+
+    const d = await api(`/admin/reembolsos/${reembolsoAtual.id}/marcar-pago`, {
+        method: 'POST',
+        body: JSON.stringify({
+            observacoes: document.getElementById('pago-observacoes').value
+        })
+    });
+
+    if(d?.success) {
+        closeModal('marcarPago');
+        closeModal('reembolso');
+        loadReembolsos();
+        alert('Reembolso marcado como pago!');
+    } else {
+        alert(d?.error || 'Erro ao marcar como pago');
+    }
+}
+
+async function abrirModalNovoReembolso() {
+    valesPendentesLista = [];
+    valesSelecionados.clear();
+    document.getElementById('novo-reembolso-distribuidor').value = '';
+    document.getElementById('vales-pendentes-container').style.display = 'none';
+    document.getElementById('resumo-selecao').style.display = 'none';
+    document.getElementById('btn-criar-reembolsos').disabled = true;
+    document.getElementById('novo-observacoes').value = '';
+
+    // Carregar distribuidores externos
+    const d = await api('/admin/distribuidores?ativo=true&tipo=externo&limite=1000');
+    const sel = document.getElementById('novo-reembolso-distribuidor');
+    sel.innerHTML = '<option value="">Selecione um distribuidor...</option>';
+    if(d?.dados) {
+        d.dados.forEach(x => {
+            sel.innerHTML += `<option value="${x.id}">${x.nome} - ${x.cnpj}</option>`;
+        });
+    }
+
+    abrirModalPorId('modalNovoReembolso');
+}
+
+async function carregarValesPendentes() {
+    const distribuidorId = document.getElementById('novo-reembolso-distribuidor').value;
+    const container = document.getElementById('vales-pendentes-container');
+    const tabela = document.getElementById('tabela-vales-pendentes');
+
+    if(!distribuidorId) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    tabela.innerHTML = '<div style="text-align:center;padding:20px">Carregando...</div>';
+
+    const d = await api(`/admin/reembolsos/vales-pendentes/${distribuidorId}`);
+
+    if(!d?.vales || d.vales.length === 0) {
+        tabela.innerHTML = '<div class="empty-state"><p>Nenhum vale pendente de reembolso para este distribuidor</p></div>';
+        document.getElementById('resumo-selecao').style.display = 'none';
+        return;
+    }
+
+    valesPendentesLista = d.vales;
+    valesSelecionados.clear();
+
+    tabela.innerHTML = `
+        <table>
+            <thead><tr>
+                <th style="width:40px"><input type="checkbox" id="selecionar-todos" onchange="toggleSelecionarTodos()"></th>
+                <th>Código</th><th>Colaborador</th><th>Mês</th><th>Valor</th>
+            </tr></thead>
+            <tbody>${d.vales.map(v => `
+                <tr>
+                    <td><input type="checkbox" class="vale-cb" data-id="${v.id}" data-valor="${v.valor||0}" onchange="toggleVale(${v.id})"></td>
+                    <td><code style="background:var(--gray-100);padding:2px 6px;border-radius:4px">${v.codigo}</code></td>
+                    <td>${v.colaborador_nome||'-'}</td>
+                    <td>${formatarMesRef(v.mes_referencia)}</td>
+                    <td style="font-weight:600;color:var(--success)">R$ ${(parseFloat(v.valor)||0).toFixed(2).replace('.', ',')}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+
+    atualizarResumoSelecao();
+}
+
+function toggleVale(valeId) {
+    if(valesSelecionados.has(valeId)) {
+        valesSelecionados.delete(valeId);
+    } else {
+        valesSelecionados.add(valeId);
+    }
+    atualizarResumoSelecao();
+}
+
+function toggleSelecionarTodos() {
+    const checked = document.getElementById('selecionar-todos').checked;
+    valesSelecionados.clear();
+    document.querySelectorAll('.vale-cb').forEach(cb => {
+        cb.checked = checked;
+        if(checked) valesSelecionados.add(parseInt(cb.dataset.id));
+    });
+    atualizarResumoSelecao();
+}
+
+function atualizarResumoSelecao() {
+    const resumo = document.getElementById('resumo-selecao');
+    const btn = document.getElementById('btn-criar-reembolsos');
+
+    if(valesSelecionados.size === 0) {
+        resumo.style.display = 'none';
+        btn.disabled = true;
+        return;
+    }
+
+    let total = 0;
+    valesPendentesLista.forEach(v => {
+        if(valesSelecionados.has(v.id)) total += parseFloat(v.valor) || 0;
+    });
+
+    document.getElementById('qtd-vales-selecionados').textContent = valesSelecionados.size;
+    document.getElementById('total-reembolso').textContent = total.toFixed(2).replace('.', ',');
+    resumo.style.display = 'block';
+    btn.disabled = false;
+}
+
+async function criarReembolsosSelecionados() {
+    if(valesSelecionados.size === 0) return;
+
+    const distribuidorId = document.getElementById('novo-reembolso-distribuidor').value;
+    const observacoes = document.getElementById('novo-observacoes').value;
+    const btn = document.getElementById('btn-criar-reembolsos');
+
+    btn.disabled = true;
+    btn.textContent = 'Criando...';
+
+    let criados = 0;
+    for(const vale of valesPendentesLista) {
+        if(!valesSelecionados.has(vale.id)) continue;
+
+        const d = await api('/admin/reembolsos', {
+            method: 'POST',
+            body: JSON.stringify({
+                vale_id: vale.id,
+                distribuidor_id: parseInt(distribuidorId),
+                colaborador_id: vale.colaborador_id,
+                valor: parseFloat(vale.valor) || 0,
+                mes_referencia: vale.mes_referencia,
+                observacoes
+            })
+        });
+
+        if(d?.success) criados++;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Criar Reembolso(s)';
+
+    if(criados > 0) {
+        alert(`${criados} reembolso(s) criado(s) com sucesso!`);
+        closeModal('novoReembolso');
+        loadReembolsos();
+    }
+}
+
+async function exportarReembolsosCSV() {
+    const status = document.getElementById('filtro-status-reembolso')?.value || '';
+    const distribuidor = document.getElementById('filtro-distribuidor-reembolso')?.value || '';
+    const mes = document.getElementById('filtro-mes-reembolso')?.value || '';
+
+    const params = new URLSearchParams();
+    if(status) params.append('status', status);
+    if(distribuidor) params.append('distribuidor_id', distribuidor);
+    if(mes) params.append('mes_referencia', mes);
+
+    window.open(`/api/admin/reembolsos/exportar/csv?${params}&token=${token}`, '_blank');
+}
+
 </script>
 
 </body>

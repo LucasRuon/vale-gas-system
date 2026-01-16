@@ -129,27 +129,35 @@ app.use(sanitizeBody);
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware de logging de requisições
+// Rotas amigáveis (redirecionamentos)
+app.get('/login', (req, res) => res.redirect('/login-admin.html'));
+app.get('/admin', (req, res) => res.redirect('/admin.html'));
+app.get('/colaborador', (req, res) => res.redirect('/colaborador.html'));
+app.get('/distribuidor', (req, res) => res.redirect('/distribuidor.html'));
+
+// Middleware de logging de requisições (detalhado)
 app.use((req, res, next) => {
     const start = Date.now();
+
+    // Log de início da requisição (apenas para debug)
+    logger.logDebug('Requisição iniciada', {
+        metodo: req.method,
+        url: req.originalUrl,
+        ip: req.ip
+    });
 
     res.on('finish', () => {
         const duration = Date.now() - start;
 
-        logger.logInfo('Requisição HTTP', {
-            method: req.method,
-            url: req.originalUrl,
-            status: res.statusCode,
-            duration_ms: duration,
-            ip: req.ip,
-            usuario: req.usuario?.id
-        });
+        // Usar função de log detalhada
+        logger.logRequest(req, res, duration);
 
-        // Log de performance para requisições lentas
+        // Log adicional de performance para requisições lentas
         if (duration > 1000) {
             logger.logPerformance('Requisição lenta', duration, {
                 method: req.method,
-                url: req.originalUrl
+                url: req.originalUrl,
+                status: res.statusCode
             });
         }
     });

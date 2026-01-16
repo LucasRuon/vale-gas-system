@@ -3,9 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { verificarToken, verificarNivel } = require('../auth');
+const { autenticarAdmin, verificarNivel } = require('../auth');
 const { runQuery, getQuery, allQuery } = require('../database');
 const logger = require('../config/logger');
+const { ACOES, registrarAuditoria, getClientIP } = require('../auditoria');
+
+// Aplicar autenticação de admin em todas as rotas deste módulo
+router.use(autenticarAdmin);
 
 // Configurar multer para upload de arquivos
 const storage = multer.diskStorage({
@@ -69,7 +73,7 @@ function formatarReembolso(reembolso) {
 // ========================================
 
 // GET /api/admin/reembolsos - Listar todos os reembolsos com filtros
-router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.get('/', verificarNivel('admin'), async (req, res) => {
     try {
         const {
             status,
@@ -202,7 +206,7 @@ router.get('/', verificarToken, verificarNivel('admin'), async (req, res) => {
 // ========================================
 
 // GET /api/admin/reembolsos/exportar/csv - Exportar para CSV
-router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.get('/exportar/csv', verificarNivel('admin'), async (req, res) => {
     try {
         const { status, mes_referencia, distribuidor_id } = req.query;
 
@@ -284,8 +288,99 @@ router.get('/exportar/csv', verificarToken, verificarNivel('admin'), async (req,
     }
 });
 
+// GET /api/admin/reembolsos/dashboard/graficos - Dados para gráficos de reembolsos no dashboard
+router.get('/dashboard/graficos', verificarNivel('admin'), async (req, res) => {
+    try {
+        const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        // 1. Reembolsos por mês (últimos 6 meses)
+        const reembolsosPorMes = await allQuery(`
+            SELECT
+                strftime('%Y-%m', criado_em) as mes,
+                COUNT(*) as total
+            FROM reembolsos
+            WHERE criado_em >= date('now', '-6 months')
+            GROUP BY mes
+            ORDER BY mes ASC
+        `);
+
+        const reembolsosMesFormatado = reembolsosPorMes.map(r => ({
+            mes: r.mes,
+            mes_nome: meses[parseInt(r.mes.split('-')[1]) - 1],
+            total: r.total
+        }));
+
+        // 2. Status dos reembolsos (mês atual)
+        const statusReembolsos = await allQuery(`
+            SELECT
+                status,
+                COUNT(*) as total
+            FROM reembolsos
+            WHERE strftime('%Y-%m', criado_em) = strftime('%Y-%m', 'now')
+            GROUP BY status
+        `);
+
+        const statusObj = {
+            a_validar: 0,
+            aprovado: 0,
+            pago: 0,
+            rejeitado: 0
+        };
+        statusReembolsos.forEach(s => {
+            if (statusObj.hasOwnProperty(s.status)) {
+                statusObj[s.status] = s.total;
+            }
+        });
+
+        // 3. Valor total por mês (últimos 6 meses)
+        const valoresPorMes = await allQuery(`
+            SELECT
+                strftime('%Y-%m', criado_em) as mes,
+                SUM(valor) as valor
+            FROM reembolsos
+            WHERE criado_em >= date('now', '-6 months')
+            GROUP BY mes
+            ORDER BY mes ASC
+        `);
+
+        const valoresMesFormatado = valoresPorMes.map(v => ({
+            mes: v.mes,
+            mes_nome: meses[parseInt(v.mes.split('-')[1]) - 1],
+            valor: v.valor || 0
+        }));
+
+        // 4. Top 5 distribuidores por valor de reembolso (mês atual)
+        const topDistribuidores = await allQuery(`
+            SELECT
+                d.nome,
+                SUM(r.valor) as valor_total,
+                COUNT(r.id) as quantidade
+            FROM reembolsos r
+            JOIN distribuidores d ON r.distribuidor_id = d.id
+            WHERE strftime('%Y-%m', r.criado_em) = strftime('%Y-%m', 'now')
+            GROUP BY r.distribuidor_id
+            ORDER BY valor_total DESC
+            LIMIT 5
+        `);
+
+        res.json({
+            sucesso: true,
+            dados: {
+                reembolsos_por_mes: reembolsosMesFormatado,
+                status_reembolsos: statusObj,
+                valores_por_mes: valoresMesFormatado,
+                top_distribuidores: topDistribuidores
+            }
+        });
+
+    } catch (error) {
+        logger.logError('Erro ao buscar gráficos de reembolsos', error);
+        res.status(500).json({ erro: 'Erro ao buscar dados para gráficos', detalhes: error.message });
+    }
+});
+
 // GET /api/admin/reembolsos/vales-pendentes/:distribuidorId - Listar vales utilizados sem reembolso
-router.get('/vales-pendentes/:distribuidorId', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.get('/vales-pendentes/:distribuidorId', verificarNivel('admin'), async (req, res) => {
     try {
         const { distribuidorId } = req.params;
 
@@ -333,7 +428,7 @@ router.get('/vales-pendentes/:distribuidorId', verificarToken, verificarNivel('a
 });
 
 // GET /api/admin/reembolsos/:id - Detalhes de um reembolso
-router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.get('/:id', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -346,7 +441,7 @@ router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => 
                 d.telefone as distribuidor_telefone,
                 c.nome as colaborador_nome,
                 c.cpf as colaborador_cpf,
-                v.codigo,
+                v.codigo as codigo_vale,
                 v.mes_referencia as vale_mes,
                 aprovador.nome as aprovado_por_nome,
                 pagador.nome as pago_por_nome,
@@ -389,7 +484,7 @@ router.get('/:id', verificarToken, verificarNivel('admin'), async (req, res) => 
 // ========================================
 
 // POST /api/admin/reembolsos - Criar reembolso manualmente
-router.post('/', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.post('/', verificarNivel('admin'), async (req, res) => {
     try {
         const {
             vale_id,
@@ -437,11 +532,11 @@ router.post('/', verificarToken, verificarNivel('admin'), async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, 'a_validar')
         `, [vale_id, distribuidor_id, colaborador_id, valor, mes_referencia || vale.mes_referencia, observacoes, vale.data_validacao || new Date().toISOString()]);
 
-        // Registrar no histórico
+        // Registrar no histórico local
         await registrarHistorico(
             result.lastID,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'criado',
             null,
             'a_validar',
@@ -449,10 +544,26 @@ router.post('/', verificarToken, verificarNivel('admin'), async (req, res) => {
             req.ip
         );
 
-        logger.logInfo('Reembolso criado manualmente', {
-            reembolso_id: result.lastID,
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.CRIAR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: result.lastID,
+            detalhes: { vale_id, valor, distribuidor_id, colaborador_id },
+            ip: getClientIP(req)
+        });
+
+        logger.logReembolso('criado', result.lastID, {
             vale_id,
-            admin: req.user.nome
+            distribuidor_id,
+            colaborador_id,
+            valor,
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome,
+            ip: getClientIP(req)
         });
 
         res.json({
@@ -468,7 +579,7 @@ router.post('/', verificarToken, verificarNivel('admin'), async (req, res) => {
 });
 
 // PUT /api/admin/reembolsos/:id - Editar reembolso
-router.put('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.put('/:id', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { valor, observacoes, banco, agencia, conta, tipo_conta, pix } = req.body;
@@ -492,17 +603,29 @@ router.put('/:id', verificarToken, verificarNivel('admin'), async (req, res) => 
             WHERE id = ?
         `, [valor || reembolso.valor, observacoes, banco, agencia, conta, tipo_conta, pix, id]);
 
-        // Registrar no histórico
+        // Registrar no histórico local
         await registrarHistorico(
             id,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'editado',
             reembolso.status,
             reembolso.status,
             'Reembolso editado',
             req.ip
         );
+
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.EDITAR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { valor, observacoes },
+            ip: getClientIP(req)
+        });
 
         res.json({ success: true, message: 'Reembolso atualizado com sucesso' });
 
@@ -517,7 +640,7 @@ router.put('/:id', verificarToken, verificarNivel('admin'), async (req, res) => 
 // ========================================
 
 // POST /api/admin/reembolsos/:id/aprovar - Aprovar reembolso
-router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.post('/:id/aprovar', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { observacoes } = req.body;
@@ -534,6 +657,14 @@ router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req,
             });
         }
 
+        // Verificar se há NF ou Recibo anexado
+        if (!reembolso.comprovante_nf && !reembolso.comprovante_recibo) {
+            return res.status(400).json({
+                success: false,
+                error: 'É necessário anexar a Nota Fiscal ou Recibo antes de aprovar o reembolso'
+            });
+        }
+
         await runQuery(`
             UPDATE reembolsos
             SET status = 'aprovado',
@@ -542,12 +673,12 @@ router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req,
                 observacoes = ?,
                 atualizado_em = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [req.user.userId, observacoes || reembolso.observacoes, id]);
+        `, [req.usuario.id, observacoes || reembolso.observacoes, id]);
 
         await registrarHistorico(
             id,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'aprovado',
             'a_validar',
             'aprovado',
@@ -555,9 +686,23 @@ router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req,
             req.ip
         );
 
-        logger.logInfo('Reembolso aprovado', {
-            reembolso_id: id,
-            admin: req.user.nome
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.APROVAR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { valor: reembolso.valor, observacoes },
+            ip: getClientIP(req)
+        });
+
+        logger.logReembolso('aprovado', id, {
+            valor: reembolso.valor,
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome,
+            ip: getClientIP(req)
         });
 
         res.json({ success: true, message: 'Reembolso aprovado com sucesso' });
@@ -569,7 +714,7 @@ router.post('/:id/aprovar', verificarToken, verificarNivel('admin'), async (req,
 });
 
 // POST /api/admin/reembolsos/:id/rejeitar - Rejeitar reembolso
-router.post('/:id/rejeitar', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.post('/:id/rejeitar', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { motivo_rejeicao } = req.body;
@@ -601,12 +746,12 @@ router.post('/:id/rejeitar', verificarToken, verificarNivel('admin'), async (req
                 motivo_rejeicao = ?,
                 atualizado_em = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [req.user.userId, motivo_rejeicao, id]);
+        `, [req.usuario.id, motivo_rejeicao, id]);
 
         await registrarHistorico(
             id,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'rejeitado',
             reembolso.status,
             'rejeitado',
@@ -614,10 +759,24 @@ router.post('/:id/rejeitar', verificarToken, verificarNivel('admin'), async (req
             req.ip
         );
 
-        logger.logWarning('Reembolso rejeitado', {
-            reembolso_id: id,
-            admin: req.user.nome,
-            motivo: motivo_rejeicao
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.REJEITAR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { motivo: motivo_rejeicao, valor: reembolso.valor },
+            ip: getClientIP(req)
+        });
+
+        logger.logReembolso('rejeitado', id, {
+            valor: reembolso.valor,
+            motivo: motivo_rejeicao,
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome,
+            ip: getClientIP(req)
         });
 
         res.json({ success: true, message: 'Reembolso rejeitado' });
@@ -629,7 +788,7 @@ router.post('/:id/rejeitar', verificarToken, verificarNivel('admin'), async (req
 });
 
 // POST /api/admin/reembolsos/:id/marcar-pago - Marcar como pago
-router.post('/:id/marcar-pago', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.post('/:id/marcar-pago', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
         const { observacoes } = req.body;
@@ -654,12 +813,12 @@ router.post('/:id/marcar-pago', verificarToken, verificarNivel('admin'), async (
                 observacoes = ?,
                 atualizado_em = CURRENT_TIMESTAMP
             WHERE id = ?
-        `, [req.user.userId, observacoes || reembolso.observacoes, id]);
+        `, [req.usuario.id, observacoes || reembolso.observacoes, id]);
 
         await registrarHistorico(
             id,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'pago',
             'aprovado',
             'pago',
@@ -667,9 +826,23 @@ router.post('/:id/marcar-pago', verificarToken, verificarNivel('admin'), async (
             req.ip
         );
 
-        logger.logInfo('Reembolso marcado como pago', {
-            reembolso_id: id,
-            admin: req.user.nome
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.PAGAR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { valor: reembolso.valor, observacoes },
+            ip: getClientIP(req)
+        });
+
+        logger.logReembolso('pago', id, {
+            valor: reembolso.valor,
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome,
+            ip: getClientIP(req)
         });
 
         res.json({ success: true, message: 'Reembolso marcado como pago' });
@@ -685,7 +858,7 @@ router.post('/:id/marcar-pago', verificarToken, verificarNivel('admin'), async (
 // ========================================
 
 // POST /api/admin/reembolsos/:id/upload - Upload de comprovantes
-router.post('/:id/upload', verificarToken, verificarNivel('admin'), upload.fields([
+router.post('/:id/upload', verificarNivel('admin'), upload.fields([
     { name: 'comprovante_nf', maxCount: 1 },
     { name: 'comprovante_recibo', maxCount: 1 },
     { name: 'comprovante_pagamento', maxCount: 1 }
@@ -727,14 +900,34 @@ router.post('/:id/upload', verificarToken, verificarNivel('admin'), upload.field
 
         await registrarHistorico(
             id,
-            req.user.userId,
-            req.user.nome,
+            req.usuario.id,
+            req.usuario.nome,
             'editado',
             reembolso.status,
             reembolso.status,
             `Arquivos anexados: ${Object.keys(updates).join(', ')}`,
             req.ip
         );
+
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.UPLOAD_DOCUMENTO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { arquivos: Object.keys(updates) },
+            ip: getClientIP(req)
+        });
+
+        // Log detalhado de upload
+        logger.logFile('upload', Object.values(updates).join(', '), {
+            reembolso_id: parseInt(id),
+            tipos: Object.keys(updates),
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome
+        });
 
         res.json({
             success: true,
@@ -749,7 +942,7 @@ router.post('/:id/upload', verificarToken, verificarNivel('admin'), upload.field
 });
 
 // GET /api/admin/reembolsos/:id/arquivo/:tipo - Download de arquivo
-router.get('/:id/arquivo/:tipo', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.get('/:id/arquivo/:tipo', verificarNivel('admin'), async (req, res) => {
     try {
         const { id, tipo } = req.params;
 
@@ -778,7 +971,7 @@ router.get('/:id/arquivo/:tipo', verificarToken, verificarNivel('admin'), async 
 });
 
 // DELETE /api/admin/reembolsos/:id - Deletar reembolso (apenas a_validar ou rejeitado)
-router.delete('/:id', verificarToken, verificarNivel('admin'), async (req, res) => {
+router.delete('/:id', verificarNivel('admin'), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -809,9 +1002,24 @@ router.delete('/:id', verificarToken, verificarNivel('admin'), async (req, res) 
         await runQuery('DELETE FROM historico_reembolsos WHERE reembolso_id = ?', [id]);
         await runQuery('DELETE FROM reembolsos WHERE id = ?', [id]);
 
-        logger.logWarning('Reembolso deletado', {
-            reembolso_id: id,
-            admin: req.user.nome
+        // Registrar na auditoria global
+        await registrarAuditoria({
+            tipo_usuario: 'admin',
+            usuario_id: req.usuario.id,
+            usuario_nome: req.usuario.nome,
+            acao: ACOES.EXCLUIR_REEMBOLSO,
+            entidade: 'reembolso',
+            entidade_id: parseInt(id),
+            detalhes: { vale_id: reembolso.vale_id, valor: reembolso.valor },
+            ip: getClientIP(req)
+        });
+
+        logger.logReembolso('excluido', id, {
+            vale_id: reembolso.vale_id,
+            valor: reembolso.valor,
+            admin_id: req.usuario.id,
+            admin_nome: req.usuario.nome,
+            ip: getClientIP(req)
         });
 
         res.json({ success: true, message: 'Reembolso deletado com sucesso' });

@@ -2,12 +2,16 @@
 // GESTÃO DE REEMBOLSOS
 // ========================================
 
-// Obter token do escopo global ou localStorage
-const token = window.token || localStorage.getItem('token');
+console.log('🔄 Iniciando script de reembolsos...');
 
-if (!token) {
-    console.error('❌ Token não encontrado! Reembolsos não funcionarão.');
+// Função para obter token dinamicamente (evita problemas de ordem de carregamento)
+function getToken() {
+    return window.token || localStorage.getItem('token');
 }
+
+// Log inicial (só para debug)
+const tokenInicial = getToken();
+console.log('🔑 Token inicial:', tokenInicial ? 'SIM' : 'NÃO (será carregado depois)');
 
 let reembolsoAtual = null;
 let paginaAtualReembolsos = 1;
@@ -58,7 +62,7 @@ function formatarMesReferencia(mesRef) {
 async function carregarEstatisticasReembolsos() {
     try {
         const response = await fetch('/api/admin/reembolsos', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await response.json();
 
@@ -76,9 +80,16 @@ async function carregarEstatisticasReembolsos() {
 
 // Carregar lista de reembolsos
 async function carregarReembolsos(page = 1) {
+    console.log('📋 carregarReembolsos() chamada, página:', page);
     try {
         paginaAtualReembolsos = page;
         const tbody = document.getElementById('listaReembolsos');
+
+        if (!tbody) {
+            console.error('❌ Elemento listaReembolsos não encontrado!');
+            return;
+        }
+
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px"><div class="spinner" style="margin:20px auto"></div>Carregando...</td></tr>';
 
         // Construir query params
@@ -99,18 +110,22 @@ async function carregarReembolsos(page = 1) {
         const dataFim = document.getElementById('filtro-data-fim-reembolso')?.value;
         if (dataFim) params.append('data_fim', dataFim);
 
+        console.log('🌐 Fazendo requisição para /api/admin/reembolsos...');
         const response = await fetch(`/api/admin/reembolsos?${params}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
+
+        console.log('📨 Resposta recebida, status:', response.status);
 
         // Verificar se a resposta é OK antes de parsear JSON
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Erro HTTP:', response.status, errorText);
+            console.error('❌ Erro HTTP:', response.status, errorText);
             throw new Error(`Erro do servidor (${response.status})`);
         }
 
         const data = await response.json();
+        console.log('📦 Dados recebidos:', JSON.stringify(data).substring(0, 200));
 
         if (!data.success) {
             throw new Error(data.error || 'Erro ao carregar reembolsos');
@@ -226,7 +241,7 @@ function renderPaginacaoReembolsos(pagination) {
 async function verDetalhesReembolso(id) {
     try {
         const response = await fetch(`/api/admin/reembolsos/${id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const result = await response.json();
 
@@ -402,7 +417,7 @@ async function confirmarAprovacao(e) {
         const response = await fetch(`/api/admin/reembolsos/${reembolsoAtual.id}/aprovar`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${getToken()}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ observacoes })
@@ -442,7 +457,7 @@ async function confirmarRejeicao(e) {
         const response = await fetch(`/api/admin/reembolsos/${reembolsoAtual.id}/rejeitar`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${getToken()}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ motivo_rejeicao: motivo })
@@ -477,7 +492,7 @@ async function confirmarPagamento(e) {
         const response = await fetch(`/api/admin/reembolsos/${reembolsoAtual.id}/marcar-pago`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Bearer ${getToken()}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ observacoes })
@@ -524,7 +539,7 @@ async function enviarComprovantes() {
         const response = await fetch(`/api/admin/reembolsos/${reembolsoAtual.id}/upload`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${getToken()}`
             },
             body: formData
         });
@@ -548,7 +563,7 @@ async function enviarComprovantes() {
 // Baixar comprovante
 async function baixarComprovante(reembolsoId, tipo) {
     try {
-        window.open(`/api/admin/reembolsos/${reembolsoId}/arquivo/${tipo}?token=${token}`, '_blank');
+        window.open(`/api/admin/reembolsos/${reembolsoId}/arquivo/${tipo}?token=${getToken()}`, '_blank');
     } catch (error) {
         console.error('Erro ao baixar comprovante:', error);
         mostrarToast('Erro ao baixar arquivo', 'error');
@@ -573,7 +588,7 @@ async function exportarReembolsosCSV() {
 
         // Fazer fetch com token no header
         const response = await fetch(`/api/admin/reembolsos/exportar/csv?${params}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
         if (!response.ok) {
@@ -636,7 +651,7 @@ async function abrirModalNovoReembolso() {
 async function carregarDistribuidoresExternos() {
     try {
         const response = await fetch('/api/admin/distribuidores?ativo=true&tipo=externo&limite=1000', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
         if (!response.ok) {
@@ -684,7 +699,7 @@ async function carregarValesPendentes() {
     try {
         // Buscar vales utilizados deste distribuidor que ainda não têm reembolso
         const response = await fetch(`/api/admin/reembolsos/vales-pendentes/${distribuidorId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
 
         if (!response.ok) {
@@ -814,7 +829,7 @@ async function criarReembolsosSelecionados() {
                 const response = await fetch('/api/admin/reembolsos', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': `Bearer ${getToken()}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -865,7 +880,7 @@ async function criarReembolsosSelecionados() {
 async function carregarDistribuidoresFiltro() {
     try {
         const response = await fetch('/api/admin/distribuidores?ativo=true&limite=1000', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await response.json();
 

@@ -21,30 +21,32 @@ const verificarToken = (token) => {
 
 // Middleware de autenticação geral
 const autenticar = (req, res, next) => {
+    let token = null;
+
+    // Tentar obter token do header Authorization
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
+    if (authHeader) {
+        const parts = authHeader.split(' ');
+        if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
+            token = parts[1];
+        }
+    }
+
+    // Fallback: tentar obter token da query string (para downloads/exportações)
+    if (!token && req.query.token) {
+        token = req.query.token;
+    }
+
+    if (!token) {
         return res.status(401).json({ erro: 'Token não fornecido' });
     }
-    
-    const parts = authHeader.split(' ');
-    
-    if (parts.length !== 2) {
-        return res.status(401).json({ erro: 'Formato de token inválido' });
-    }
-    
-    const [scheme, token] = parts;
-    
-    if (!/^Bearer$/i.test(scheme)) {
-        return res.status(401).json({ erro: 'Token mal formatado' });
-    }
-    
+
     const decoded = verificarToken(token);
-    
+
     if (!decoded) {
         return res.status(401).json({ erro: 'Token inválido ou expirado' });
     }
-    
+
     req.usuario = decoded;
     next();
 };

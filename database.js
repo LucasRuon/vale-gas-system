@@ -137,7 +137,14 @@ const initDatabase = async () => {
             
             -- Horário de funcionamento
             horario_funcionamento TEXT,
-            
+
+            -- Dados Bancários (para reembolso)
+            banco TEXT,
+            agencia TEXT,
+            conta TEXT,
+            tipo_conta TEXT CHECK(tipo_conta IN ('corrente', 'poupanca')),
+            pix TEXT,
+
             -- Controle
             ativo INTEGER DEFAULT 1,
             criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,

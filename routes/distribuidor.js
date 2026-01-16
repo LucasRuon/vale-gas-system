@@ -405,6 +405,172 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // ========================================
+// REEMBOLSOS DO DISTRIBUIDOR (APENAS EXTERNOS)
+// ========================================
+
+// Listar reembolsos do distribuidor
+router.get('/reembolsos', async (req, res) => {
+    try {
+        const { status, mes, pagina = 1, limite = 50 } = req.query;
+        const offset = (pagina - 1) * limite;
+
+        // Verificar se é distribuidor externo
+        const dist = await getQuery(
+            'SELECT tipo_distribuidor FROM distribuidores WHERE id = ?',
+            [req.usuario.id]
+        );
+
+        if (dist && dist.tipo_distribuidor === 'interno') {
+            return res.json({
+                sucesso: true,
+                dados: [],
+                mensagem: 'Distribuidores internos não possuem reembolsos',
+                stats: { total: 0, a_validar: 0, aprovado: 0, pago: 0, rejeitado: 0 }
+            });
+        }
+
+        // Construir query
+        let whereClause = 'WHERE r.distribuidor_id = ?';
+        const params = [req.usuario.id];
+
+        if (status) {
+            whereClause += ' AND r.status = ?';
+            params.push(status);
+        }
+
+        if (mes) {
+            whereClause += ' AND r.mes_referencia = ?';
+            params.push(mes);
+        }
+
+        // Buscar reembolsos
+        const reembolsos = await allQuery(`
+            SELECT r.*,
+                   c.nome as colaborador_nome,
+                   c.cpf as colaborador_cpf,
+                   v.codigo as codigo_vale
+            FROM reembolsos r
+            LEFT JOIN colaboradores c ON r.colaborador_id = c.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
+            ${whereClause}
+            ORDER BY r.criado_em DESC
+            LIMIT ? OFFSET ?
+        `, [...params, parseInt(limite), parseInt(offset)]);
+
+        // Contar total
+        const countResult = await getQuery(`
+            SELECT COUNT(*) as total FROM reembolsos r ${whereClause}
+        `, params);
+
+        // Estatísticas
+        const stats = await getQuery(`
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'a_validar' THEN 1 ELSE 0 END) as a_validar,
+                SUM(CASE WHEN status = 'aprovado' THEN 1 ELSE 0 END) as aprovado,
+                SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) as pago,
+                SUM(CASE WHEN status = 'rejeitado' THEN 1 ELSE 0 END) as rejeitado,
+                SUM(CASE WHEN status = 'a_validar' THEN valor ELSE 0 END) as valor_a_validar,
+                SUM(CASE WHEN status = 'aprovado' THEN valor ELSE 0 END) as valor_aprovado,
+                SUM(CASE WHEN status = 'pago' THEN valor ELSE 0 END) as valor_pago
+            FROM reembolsos
+            WHERE distribuidor_id = ?
+        `, [req.usuario.id]);
+
+        // Formatar CPF
+        const dados = reembolsos.map(r => ({
+            ...r,
+            colaborador_cpf: formatarCPF(r.colaborador_cpf)
+        }));
+
+        res.json({
+            sucesso: true,
+            dados,
+            stats: {
+                total: stats.total || 0,
+                a_validar: stats.a_validar || 0,
+                aprovado: stats.aprovado || 0,
+                pago: stats.pago || 0,
+                rejeitado: stats.rejeitado || 0,
+                valor_a_validar: stats.valor_a_validar || 0,
+                valor_aprovado: stats.valor_aprovado || 0,
+                valor_pago: stats.valor_pago || 0
+            },
+            paginacao: {
+                total: countResult.total,
+                pagina: parseInt(pagina),
+                limite: parseInt(limite),
+                totalPaginas: Math.ceil(countResult.total / limite)
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao listar reembolsos:', error);
+        res.status(500).json({ erro: 'Erro interno do servidor' });
+    }
+});
+
+// Exportar reembolsos em CSV
+router.get('/reembolsos/exportar/csv', async (req, res) => {
+    try {
+        const { status, mes } = req.query;
+
+        // Verificar se é distribuidor externo
+        const dist = await getQuery(
+            'SELECT tipo_distribuidor, nome FROM distribuidores WHERE id = ?',
+            [req.usuario.id]
+        );
+
+        if (dist && dist.tipo_distribuidor === 'interno') {
+            return res.status(400).json({ erro: 'Distribuidores internos não possuem reembolsos' });
+        }
+
+        // Construir query
+        let whereClause = 'WHERE r.distribuidor_id = ?';
+        const params = [req.usuario.id];
+
+        if (status) {
+            whereClause += ' AND r.status = ?';
+            params.push(status);
+        }
+
+        if (mes) {
+            whereClause += ' AND r.mes_referencia = ?';
+            params.push(mes);
+        }
+
+        const reembolsos = await allQuery(`
+            SELECT r.id, r.mes_referencia, r.valor, r.status,
+                   c.nome as colaborador_nome,
+                   c.cpf as colaborador_cpf,
+                   v.codigo as codigo_vale,
+                   r.criado_em, r.data_aprovacao, r.data_pagamento
+            FROM reembolsos r
+            LEFT JOIN colaboradores c ON r.colaborador_id = c.id
+            LEFT JOIN vales_gas v ON r.vale_id = v.id
+            ${whereClause}
+            ORDER BY r.criado_em DESC
+        `, params);
+
+        // Gerar CSV
+        const statusMap = { 'a_validar': 'A Validar', 'aprovado': 'Aprovado', 'pago': 'Pago', 'rejeitado': 'Rejeitado' };
+        let csv = 'ID;Colaborador;CPF;Código Vale;Mês Ref;Valor;Status;Data Criação;Data Aprovação;Data Pagamento\n';
+
+        reembolsos.forEach(r => {
+            csv += `${r.id};${r.colaborador_nome || ''};${formatarCPF(r.colaborador_cpf) || ''};${r.codigo_vale || ''};${r.mes_referencia || ''};${r.valor || 0};${statusMap[r.status] || r.status};${r.criado_em || ''};${r.data_aprovacao || ''};${r.data_pagamento || ''}\n`;
+        });
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename=reembolsos-${dist.nome.replace(/[^a-zA-Z0-9]/g, '_')}-${new Date().toISOString().split('T')[0]}.csv`);
+        res.send('\uFEFF' + csv); // BOM for Excel UTF-8
+
+    } catch (error) {
+        console.error('Erro ao exportar reembolsos:', error);
+        res.status(500).json({ erro: 'Erro interno do servidor' });
+    }
+});
+
+// ========================================
 // ALTERAR SENHA
 // ========================================
 

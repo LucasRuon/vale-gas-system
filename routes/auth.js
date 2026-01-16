@@ -5,6 +5,7 @@ const { gerarToken, hashSenha, compararSenha } = require('../auth');
 const { gerarTokenRecuperacao, limparDocumento } = require('../utils');
 const { notificarRecuperacaoSenha } = require('../webhooks');
 const { ACOES, registrarAuditoria, getClientIP } = require('../auditoria');
+const logger = require('../config/logger');
 
 // ========================================
 // LOGIN COLABORADOR
@@ -42,6 +43,13 @@ router.post('/login/colaborador', async (req, res) => {
                 detalhes: { motivo: 'Senha incorreta' },
                 ip: getClientIP(req)
             });
+            logger.logAuth('LOGIN_FALHA', {
+                tipo_usuario: 'colaborador',
+                usuario_id: colaborador.id,
+                usuario_nome: colaborador.nome,
+                motivo: 'Senha incorreta',
+                ip: getClientIP(req)
+            });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
         }
 
@@ -51,6 +59,12 @@ router.post('/login/colaborador', async (req, res) => {
             usuario_id: colaborador.id,
             usuario_nome: colaborador.nome,
             acao: ACOES.LOGIN,
+            ip: getClientIP(req)
+        });
+        logger.logAuth('LOGIN_SUCESSO', {
+            tipo_usuario: 'colaborador',
+            usuario_id: colaborador.id,
+            usuario_nome: colaborador.nome,
             ip: getClientIP(req)
         });
 
@@ -73,7 +87,7 @@ router.post('/login/colaborador', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro no login colaborador:', error);
+        logger.logError('Erro no login colaborador', error, { ip: getClientIP(req) });
         res.status(500).json({ erro: 'Erro interno do servidor' });
     }
 });
@@ -110,6 +124,13 @@ router.post('/login/admin', async (req, res) => {
                 detalhes: { motivo: 'Senha incorreta' },
                 ip: getClientIP(req)
             });
+            logger.logAuth('LOGIN_FALHA', {
+                tipo_usuario: 'admin',
+                usuario_id: admin.id,
+                usuario_nome: admin.nome,
+                motivo: 'Senha incorreta',
+                ip: getClientIP(req)
+            });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
         }
 
@@ -119,6 +140,13 @@ router.post('/login/admin', async (req, res) => {
             usuario_id: admin.id,
             usuario_nome: admin.nome,
             acao: ACOES.LOGIN,
+            ip: getClientIP(req)
+        });
+        logger.logAuth('LOGIN_SUCESSO', {
+            tipo_usuario: 'admin',
+            usuario_id: admin.id,
+            usuario_nome: admin.nome,
+            nivel: admin.nivel,
             ip: getClientIP(req)
         });
 
@@ -143,7 +171,7 @@ router.post('/login/admin', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro no login admin:', error);
+        logger.logError('Erro no login admin', error, { ip: getClientIP(req) });
         res.status(500).json({ erro: 'Erro interno do servidor' });
     }
 });
@@ -177,6 +205,12 @@ router.post('/login/distribuidor', async (req, res) => {
                 detalhes: JSON.stringify({ motivo: 'Distribuidor não encontrado', login }),
                 ip: getClientIP(req)
             });
+            logger.logAuth('LOGIN_FALHA', {
+                tipo_usuario: 'distribuidor',
+                login_tentado: login,
+                motivo: 'Distribuidor não encontrado',
+                ip: getClientIP(req)
+            });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
         }
 
@@ -190,6 +224,13 @@ router.post('/login/distribuidor', async (req, res) => {
                 usuario_nome: distribuidor.nome,
                 acao: ACOES.LOGIN_FALHA,
                 detalhes: JSON.stringify({ motivo: 'Senha incorreta' }),
+                ip: getClientIP(req)
+            });
+            logger.logAuth('LOGIN_FALHA', {
+                tipo_usuario: 'distribuidor',
+                usuario_id: distribuidor.id,
+                usuario_nome: distribuidor.nome,
+                motivo: 'Senha incorreta',
                 ip: getClientIP(req)
             });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
@@ -211,6 +252,12 @@ router.post('/login/distribuidor', async (req, res) => {
             detalhes: JSON.stringify({ email: distribuidor.email }),
             ip: getClientIP(req)
         });
+        logger.logAuth('LOGIN_SUCESSO', {
+            tipo_usuario: 'distribuidor',
+            usuario_id: distribuidor.id,
+            usuario_nome: distribuidor.nome,
+            ip: getClientIP(req)
+        });
 
         res.json({
             sucesso: true,
@@ -224,7 +271,7 @@ router.post('/login/distribuidor', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro no login distribuidor:', error);
+        logger.logError('Erro no login distribuidor', error, { ip: getClientIP(req) });
         res.status(500).json({ erro: 'Erro interno do servidor' });
     }
 });
