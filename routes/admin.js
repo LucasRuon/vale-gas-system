@@ -458,10 +458,11 @@ router.get('/distribuidores', async (req, res) => {
         let sql = 'SELECT * FROM distribuidores WHERE 1=1';
         const params = [];
 
-        // Só filtra por ativo se o valor for 'true' ou 'false' explicitamente
-        if (ativo === 'true' || ativo === 'false') {
-            sql += ' AND ativo = ?';
-            params.push(ativo === 'true' ? 1 : 0);
+        // Filtra por ativo (aceita true/false, 1/0)
+        if (ativo === 'true' || ativo === '1') {
+            sql += ' AND ativo = 1';
+        } else if (ativo === 'false' || ativo === '0') {
+            sql += ' AND ativo = 0';
         }
 
         // Filtrar por tipo (interno ou externo)
@@ -1303,20 +1304,27 @@ router.get('/dashboard', async (req, res) => {
 router.get('/dashboard/graficos', async (req, res) => {
     try {
         const mesReferencia = getMesReferencia();
-        
-        // Retiradas dos últimos 6 meses
+        const {
+            periodoRetiradas = '6',
+            periodoStatusVales = 'atual',
+            periodoReembolsosMes = '6',
+            periodoReembolsosStatus = 'atual'
+        } = req.query;
+
+        // Formatar nomes dos meses
+        const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        // Retiradas conforme período selecionado
         const retiradasPorMes = await allQuery(`
-            SELECT 
+            SELECT
                 mes_referencia,
                 COUNT(CASE WHEN status = 'utilizado' THEN 1 END) as total
             FROM vales_gas
-            WHERE mes_referencia >= date('now', '-6 months')
+            WHERE mes_referencia >= date('now', '-${parseInt(periodoRetiradas)} months')
             GROUP BY mes_referencia
             ORDER BY mes_referencia ASC
         `);
-        
-        // Formatar nomes dos meses
-        const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
         const retiradasFormatadas = retiradasPorMes.map(r => {
             const [ano, mes] = r.mes_referencia.split('-');
             return {
@@ -1325,28 +1333,47 @@ router.get('/dashboard/graficos', async (req, res) => {
                 total: r.total || 0
             };
         });
-        
-        // Status dos vales do mês atual
-        const statusVales = await getQuery(`
-            SELECT 
-                SUM(CASE WHEN status = 'ativo' THEN 1 ELSE 0 END) as ativos,
-                SUM(CASE WHEN status = 'utilizado' THEN 1 ELSE 0 END) as utilizados,
-                SUM(CASE WHEN status = 'expirado' THEN 1 ELSE 0 END) as expirados
-            FROM vales_gas WHERE mes_referencia = ?
-        `, [mesReferencia]);
-        
-        // Taxa de utilização dos últimos 6 meses
+
+        // Status dos vales conforme período
+        let statusValesQuery;
+        if (periodoStatusVales === 'atual') {
+            statusValesQuery = await getQuery(`
+                SELECT
+                    SUM(CASE WHEN status = 'ativo' THEN 1 ELSE 0 END) as ativos,
+                    SUM(CASE WHEN status = 'utilizado' THEN 1 ELSE 0 END) as utilizados,
+                    SUM(CASE WHEN status = 'expirado' THEN 1 ELSE 0 END) as expirados
+                FROM vales_gas WHERE mes_referencia = ?
+            `, [mesReferencia]);
+        } else if (periodoStatusVales === 'todos') {
+            statusValesQuery = await getQuery(`
+                SELECT
+                    SUM(CASE WHEN status = 'ativo' THEN 1 ELSE 0 END) as ativos,
+                    SUM(CASE WHEN status = 'utilizado' THEN 1 ELSE 0 END) as utilizados,
+                    SUM(CASE WHEN status = 'expirado' THEN 1 ELSE 0 END) as expirados
+                FROM vales_gas
+            `);
+        } else {
+            statusValesQuery = await getQuery(`
+                SELECT
+                    SUM(CASE WHEN status = 'ativo' THEN 1 ELSE 0 END) as ativos,
+                    SUM(CASE WHEN status = 'utilizado' THEN 1 ELSE 0 END) as utilizados,
+                    SUM(CASE WHEN status = 'expirado' THEN 1 ELSE 0 END) as expirados
+                FROM vales_gas WHERE mes_referencia >= date('now', '-${parseInt(periodoStatusVales)} months')
+            `);
+        }
+
+        // Taxa de utilização conforme período de retiradas
         const taxaUtilizacao = await allQuery(`
-            SELECT 
+            SELECT
                 mes_referencia,
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'utilizado' THEN 1 END) as utilizados
             FROM vales_gas
-            WHERE mes_referencia >= date('now', '-6 months')
+            WHERE mes_referencia >= date('now', '-${parseInt(periodoRetiradas)} months')
             GROUP BY mes_referencia
             ORDER BY mes_referencia ASC
         `);
-        
+
         const taxaFormatada = taxaUtilizacao.map(t => {
             const [ano, mes] = t.mes_referencia.split('-');
             return {
@@ -1355,7 +1382,7 @@ router.get('/dashboard/graficos', async (req, res) => {
                 taxa: t.total > 0 ? Math.round((t.utilizados / t.total) * 100) : 0
             };
         });
-        
+
         // Top 5 distribuidores do mês
         const topDistribuidores = await allQuery(`
             SELECT d.nome, COUNT(v.id) as total
@@ -1366,21 +1393,21 @@ router.get('/dashboard/graficos', async (req, res) => {
             ORDER BY total DESC
             LIMIT 5
         `, [mesReferencia]);
-        
+
         res.json({
             sucesso: true,
             dados: {
                 retiradas_por_mes: retiradasFormatadas,
                 status_vales: {
-                    ativos: statusVales?.ativos || 0,
-                    utilizados: statusVales?.utilizados || 0,
-                    expirados: statusVales?.expirados || 0
+                    ativos: statusValesQuery?.ativos || 0,
+                    utilizados: statusValesQuery?.utilizados || 0,
+                    expirados: statusValesQuery?.expirados || 0
                 },
                 taxa_utilizacao: taxaFormatada,
                 top_distribuidores: topDistribuidores.length > 0 ? topDistribuidores : [{nome: 'Nenhum', total: 0}]
             }
         });
-        
+
     } catch (error) {
         console.error('Erro ao buscar dados dos gráficos:', error);
         res.status(500).json({ erro: 'Erro interno do servidor' });
