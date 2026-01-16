@@ -391,6 +391,30 @@ const initDatabase = async () => {
         console.error('   ⚠️  Erro ao adicionar coluna tipo_distribuidor:', error.message);
     }
 
+    // MIGRAÇÃO: Adicionar colunas bancárias na tabela distribuidores se não existirem
+    try {
+        const columns = await allQuery(`PRAGMA table_info(distribuidores)`);
+        const columnNames = columns.map(col => col.name);
+
+        const camposBancarios = [
+            { nome: 'banco', sql: 'banco TEXT' },
+            { nome: 'agencia', sql: 'agencia TEXT' },
+            { nome: 'conta', sql: 'conta TEXT' },
+            { nome: 'tipo_conta', sql: "tipo_conta TEXT CHECK(tipo_conta IN ('corrente', 'poupanca'))" },
+            { nome: 'pix', sql: 'pix TEXT' }
+        ];
+
+        for (const campo of camposBancarios) {
+            if (!columnNames.includes(campo.nome)) {
+                console.log(`   → Migrando tabela distribuidores: adicionando ${campo.nome}...`);
+                await runQuery(`ALTER TABLE distribuidores ADD COLUMN ${campo.sql}`);
+                console.log(`   ✓ Coluna ${campo.nome} adicionada com sucesso`);
+            }
+        }
+    } catch (error) {
+        console.error('   ⚠️  Erro ao adicionar colunas bancárias:', error.message);
+    }
+
     // Inserir configurações padrão se não existirem
     const configPadrao = [
         { chave: 'vales_por_mes', valor: '1', descricao: 'Quantidade de vales por colaborador por mês' },

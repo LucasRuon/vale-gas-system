@@ -25,6 +25,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ========================================
+// TRUST PROXY (necessário para Railway/Heroku/etc)
+// ========================================
+// Quando atrás de proxy reverso (Railway, Heroku, nginx),
+// precisamos confiar no header X-Forwarded-For para obter o IP real
+app.set('trust proxy', 1);
+
+// ========================================
 // SEGURANÇA - HELMET
 // ========================================
 // CSP mais permissivo em desenvolvimento, restritivo em produção
