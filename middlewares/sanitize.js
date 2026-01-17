@@ -146,7 +146,81 @@ const validators = {
     },
 
     /**
-     * Validar CNPJ (formato)
+     * Validar CNPJ (formato e dígitos verificadores)
+     */
+    isCNPJ: (cnpj) => {
+        const clean = cnpj.replace(/\D/g, '');
+
+        if (clean.length !== 14) return false;
+
+        // Rejeitar CNPJs com todos os dígitos iguais
+        if (/^(\d)\1+$/.test(clean)) return false;
+
+        // Validar dígitos verificadores
+        let tamanho = clean.length - 2;
+        let numeros = clean.substring(0, tamanho);
+        const digitos = clean.substring(tamanho);
+        let soma = 0;
+        let pos = tamanho - 7;
+
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+
+        let resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+        if (resultado !== parseInt(digitos.charAt(0))) return false;
+
+        tamanho = tamanho + 1;
+        numeros = clean.substring(0, tamanho);
+        soma = 0;
+        pos = tamanho - 7;
+
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+
+        resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+        if (resultado !== parseInt(digitos.charAt(1))) return false;
+
+        return true;
+    },
+
+    /**
+     * Validar CPF (formato e dígitos verificadores)
+     */
+    isCPF: (cpf) => {
+        const clean = cpf.replace(/\D/g, '');
+
+        if (clean.length !== 11) return false;
+
+        // Rejeitar CPFs com todos os dígitos iguais (ex: 111.111.111-11)
+        if (/^(\d)\1+$/.test(clean)) return false;
+
+        // Validar primeiro dígito verificador
+        let soma = 0;
+        for (let i = 0; i < 9; i++) {
+            soma += parseInt(clean.charAt(i)) * (10 - i);
+        }
+        let resto = (soma * 10) % 11;
+        if (resto === 10 || resto === 11) resto = 0;
+        if (resto !== parseInt(clean.charAt(9))) return false;
+
+        // Validar segundo dígito verificador
+        soma = 0;
+        for (let i = 0; i < 10; i++) {
+            soma += parseInt(clean.charAt(i)) * (11 - i);
+        }
+        resto = (soma * 10) % 11;
+        if (resto === 10 || resto === 11) resto = 0;
+        if (resto !== parseInt(clean.charAt(10))) return false;
+
+        return true;
+    },
+
+    /**
+     * Validar CNPJ (apenas formato - mantido para compatibilidade)
      */
     isCNPJFormat: (cnpj) => {
         const clean = cnpj.replace(/\D/g, '');
@@ -154,7 +228,7 @@ const validators = {
     },
 
     /**
-     * Validar CPF (formato)
+     * Validar CPF (apenas formato - mantido para compatibilidade)
      */
     isCPFFormat: (cpf) => {
         const clean = cpf.replace(/\D/g, '');

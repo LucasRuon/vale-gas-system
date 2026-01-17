@@ -485,8 +485,8 @@ const initDatabase = async () => {
             [adminNome, adminEmail, senhaHash, 'admin']
         );
         console.log(`👤 Usuário admin master criado: ${adminEmail}`);
-        console.log(`   Senha: ${adminSenha}`);
         console.log('   ⚠️  ALTERE A SENHA APÓS O PRIMEIRO LOGIN!');
+        // SEGURANÇA: Não logamos a senha no console
     }
 
     console.log('✅ Banco de dados inicializado com sucesso!');

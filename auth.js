@@ -2,8 +2,15 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { getQuery } = require('./database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_padrao';
-const JWT_EXPIRATION = '24h';
+// SEGURANÇA: JWT_SECRET deve ser definido no .env - sem fallback inseguro
+if (!process.env.JWT_SECRET) {
+    console.error('❌ ERRO CRÍTICO: JWT_SECRET não está definido no arquivo .env');
+    console.error('   Gere uma chave segura com: openssl rand -base64 32');
+    process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
 
 // Gerar token JWT
 const gerarToken = (payload) => {

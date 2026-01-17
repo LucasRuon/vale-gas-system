@@ -358,8 +358,12 @@ router.post('/recuperar-senha/confirmar', async (req, res) => {
             return res.status(400).json({ erro: 'Token e nova senha são obrigatórios' });
         }
 
-        if (novaSenha.length < 6) {
-            return res.status(400).json({ erro: 'A senha deve ter pelo menos 6 caracteres' });
+        // Validação de senha forte: mínimo 8 caracteres, 1 maiúscula, 1 minúscula, 1 número
+        const senhaForteRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!senhaForteRegex.test(novaSenha)) {
+            return res.status(400).json({
+                erro: 'A senha deve ter no mínimo 8 caracteres, incluindo: 1 letra maiúscula, 1 letra minúscula e 1 número'
+            });
         }
 
         // Buscar token válido
@@ -372,14 +376,20 @@ router.post('/recuperar-senha/confirmar', async (req, res) => {
             return res.status(400).json({ erro: 'Token inválido ou expirado' });
         }
 
-        // Determinar tabela
-        let tabela = '';
-        if (tokenData.tipo_usuario === 'colaborador') {
-            tabela = 'colaboradores';
-        } else if (tokenData.tipo_usuario === 'admin') {
-            tabela = 'usuarios_admin';
-        } else if (tokenData.tipo_usuario === 'distribuidor') {
-            tabela = 'distribuidores';
+        // SEGURANÇA: Whitelist de tabelas válidas para evitar SQL injection
+        const tabelasValidas = {
+            'colaborador': 'colaboradores',
+            'admin': 'usuarios_admin',
+            'distribuidor': 'distribuidores'
+        };
+
+        const tabela = tabelasValidas[tokenData.tipo_usuario];
+        if (!tabela) {
+            logger.logSecurity('Tipo de usuário inválido na recuperação de senha', {
+                tipo_usuario: tokenData.tipo_usuario,
+                token_id: tokenData.id
+            });
+            return res.status(400).json({ erro: 'Tipo de usuário inválido' });
         }
 
         // Atualizar senha
